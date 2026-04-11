@@ -4,11 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Our Forever ❤️</title>
-  <link rel="stylesheet" href="./style.css" />
   <style>
     body { background-color: #1a1a1a; color: white; text-align: center; font-family: Arial, sans-serif; overflow: hidden; margin: 0; }
-    .container { padding-top: 50px; }
+    .container { padding-top: 50px; transition: 0.5s; }
     
+    /* Background Dark Overlay */
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85); /* Blackish background */
+      backdrop-filter: blur(5px); /* Background blur effect */
+      z-index: 1500;
+    }
+
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.1); }
@@ -25,10 +35,9 @@
       font-weight: bold;
       cursor: pointer;
       animation: pulse 1.5s infinite;
-      box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
     }
 
-    /* --- Cute Kissy Panel (Modal) --- */
+    /* --- Cute Babu Panel --- */
     #kissy-panel {
       display: none;
       position: fixed;
@@ -37,69 +46,55 @@
       width: 280px;
       background: #fff;
       color: #333;
-      padding: 20px;
-      border-radius: 20px;
-      box-shadow: 0 0 20px rgba(255, 77, 109, 0.6);
+      padding: 30px 20px;
+      border-radius: 25px;
+      box-shadow: 0 0 30px rgba(255, 77, 109, 0.8);
       z-index: 2000;
+      text-align: center;
     }
 
-    #kissy-panel h2 { font-size: 1.2rem; margin-bottom: 15px; color: #ff4d6d; }
+    #kissy-panel h2 { font-size: 1.5rem; margin-bottom: 20px; color: #ff4d6d; font-weight: bold; }
 
     .kissy-btn {
-      padding: 10px 20px;
+      padding: 12px 25px;
       background: #ff4d6d;
       color: white;
       border: none;
-      border-radius: 15px;
+      border-radius: 50px;
       font-weight: bold;
       cursor: pointer;
+      font-size: 1rem;
+      box-shadow: 0 4px 10px rgba(255, 77, 109, 0.3);
     }
 
-    /* Game Overlay */
+    /* Game Screen */
     #game-container {
       display: none;
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0,0,0,0.9);
-      z-index: 1000;
+      background: #1a1a1a;
+      z-index: 2500;
     }
 
-    #basket {
-      position: absolute; bottom: 30px; left: 50%; width: 80px; height: 50px;
-      background: #ff4d6d; border-radius: 0 0 40px 40px;
-      transform: translateX(-50%); font-size: 2rem; line-height: 50px;
-    }
-
-    .kiss-obj { position: absolute; font-size: 2.5rem; user-select: none; }
-    .effect-emoji { position: absolute; font-size: 2.5rem; animation: fadeUp 0.8s ease-out forwards; }
-
-    @keyframes fadeUp {
-      0% { opacity: 1; transform: translateY(0); }
-      100% { opacity: 0; transform: translateY(-100px); }
-    }
-
+    #basket { position: absolute; bottom: 30px; left: 50%; width: 80px; height: 50px; background: #ff4d6d; border-radius: 0 0 40px 40px; transform: translateX(-50%); font-size: 2rem; line-height: 50px; }
+    .kiss-obj { position: absolute; font-size: 2.5rem; }
     .score-text { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; color: #ff4d6d; font-weight: bold; }
     .exit-btn { position: absolute; top: 20px; right: 20px; cursor: pointer; color: white; background: #333; padding: 5px 15px; border-radius: 20px; }
   </style>
 </head>
 <body>
 
-  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
-    Dev by Faisal
-  </div>
-
-  <div class="container">
+  <div id="overlay"></div> <div class="container" id="main-content">
     <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
     <h1>Hehe! I Love You Tooo! 😘</h1>
     <p>hum humesha sath rahenge! ❤️</p>
-    
     <button class="play-btn" onclick="showPanel()">Play Cute Game 💋</button>
   </div>
 
   <div id="kissy-panel">
-    <h2>Aise kaise game? Pehle...</h2>
-    <button class="kissy-btn" onclick="startGame()">Button meko kissy 👉🏻👈🏻</button>
+    <h2>Babu kissyan 😘</h2>
+    <button class="kissy-btn" onclick="startGame()">Babu kissyan den 👉🏻👈🏻</button>
   </div>
 
   <div id="game-container">
@@ -113,18 +108,19 @@
     let gameActive = false;
 
     function showPanel() {
+        document.getElementById('overlay').style.display = 'block'; // Background dark ho jayega
         document.getElementById('kissy-panel').style.display = 'block';
     }
 
     function startGame() {
+        document.getElementById('overlay').style.display = 'none';
         document.getElementById('kissy-panel').style.display = 'none';
         gameActive = true;
-        score = 0;
         document.getElementById('game-container').style.display = 'block';
         spawnKiss();
     }
 
-    // Basket Controls
+    // Basket Movement
     const basket = document.getElementById('basket');
     const move = (e) => {
         if(!gameActive) return;
@@ -138,7 +134,8 @@
         if(!gameActive) return;
         const kiss = document.createElement('div');
         kiss.innerText = '💋';
-        kiss.className = 'kiss-obj';
+        kiss.style.position = 'absolute';
+        kiss.style.fontSize = '2.5rem';
         kiss.style.left = Math.random() * (window.innerWidth - 40) + 'px';
         kiss.style.top = '-50px';
         document.getElementById('game-container').appendChild(kiss);
@@ -152,25 +149,13 @@
             if (kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right) {
                 score++;
                 document.getElementById('score-val').innerText = score;
-                showEmoji('😘', kr.left, kr.top);
                 kiss.remove(); clearInterval(fall);
             }
             if (top > window.innerHeight) {
-                showEmoji('🥺', kr.left, window.innerHeight - 50);
                 kiss.remove(); clearInterval(fall);
             }
         }, 20);
         setTimeout(spawnKiss, 1000);
-    }
-
-    function showEmoji(emoji, x, y) {
-        const div = document.createElement('div');
-        div.innerText = emoji;
-        div.className = 'effect-emoji';
-        div.style.left = x + 'px';
-        div.style.top = y + 'px';
-        document.getElementById('game-container').appendChild(div);
-        setTimeout(() => div.remove(), 800);
     }
   </script>
 </body>
