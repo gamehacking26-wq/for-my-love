@@ -6,6 +6,7 @@
   <title>Our Forever ❤️</title>
   <link rel="stylesheet" href="./style.css" />
   <style>
+    /* Aapki Original UI */
     body { background-color: #1a1a1a; color: white; text-align: center; font-family: Arial, sans-serif; overflow: hidden; margin: 0; }
     .container { padding-top: 50px; }
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -16,6 +17,7 @@
       animation: pulse 1.5s infinite;
     }
 
+    /* Panels & Overlay */
     #overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1500; }
     .cute-panel {
       display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -23,6 +25,7 @@
       z-index: 2000; text-align: center; box-shadow: 0 0 20px #ff4d6d;
     }
 
+    /* Game Screens */
     .game-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 1000; }
     #snake-canvas { background: #000; border: 2px solid #ffb703; display: block; margin: 60px auto 10px; box-shadow: 0 0 15px #ffb703; border-radius: 10px; }
     .stats { position: absolute; top: 20px; left: 20px; text-align: left; font-weight: bold; color: #ffb703; }
@@ -39,6 +42,10 @@
 <body>
 
   <div id="overlay"></div>
+
+  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
+    Dev by Faisal
+  </div>
 
   <div class="container" id="main-ui">
     <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
@@ -75,7 +82,8 @@
 
   <script>
     let score = 0, misses = 0, gameActive = false, currentGame = "";
-    let chickBody, food, direction, lastTime = 0, baseSpeed = 160;
+    let chickBody, food, direction, lastTime = 0;
+    let baseSpeed = 250; // Bohat slow start
     const box = 20;
     const canvas = document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
@@ -88,7 +96,7 @@
         gameActive = true; currentGame = "catch"; document.getElementById('game-container').style.display = 'block'; spawnCatch();
     }
 
-    // --- CHICK GAME ---
+    // --- CHICK GAME (SMOOTH & DYNAMIC SPEED) ---
     function startChickGame() {
         document.getElementById('snake-screen').style.display = 'block';
         canvas.width = 300; canvas.height = 300;
@@ -107,9 +115,10 @@
 
     function chickLoop(t) {
         if (!gameActive || currentGame !== "chick") return;
-        let speed = Math.max(70, baseSpeed - (score * 8));
+        // Har kissy par 10ms speed barhay gi, minimum 60ms tak
+        let currentSpeed = Math.max(60, baseSpeed - (score * 10));
         if (!lastTime) lastTime = t;
-        if (t - lastTime > speed) {
+        if (t - lastTime > currentSpeed) {
             updateChick(); drawChick(); lastTime = t;
         }
         requestAnimationFrame(chickLoop);
@@ -139,7 +148,7 @@
         chickBody.unshift(head);
     }
 
-    // --- SHARED LOGIC ---
+    // --- CATCH SPAWN & SHARED LOGIC ---
     function spawnCatch() {
         if(!gameActive || currentGame !== "catch") return;
         const k = document.createElement('div');
