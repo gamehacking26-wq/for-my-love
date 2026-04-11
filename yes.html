@@ -15,9 +15,8 @@
       100% { transform: scale(1); }
     }
 
-    /* Game Buttons & Panels */
     .play-btn {
-      margin-top: 20px; padding: 12px 30px; background: #ff4d6d; color: white;
+      margin: 10px; padding: 12px 30px; background: #ff4d6d; color: white;
       border: none; border-radius: 50px; font-weight: bold; cursor: pointer;
       animation: pulse 1.5s infinite;
     }
@@ -33,13 +32,16 @@
       z-index: 2000; text-align: center; box-shadow: 0 0 20px #ff4d6d;
     }
 
-    /* Game Elements */
-    #game-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 1000; }
-    #basket { position: absolute; bottom: 30px; left: 50%; width: 80px; height: 50px; background: #ff4d6d; border-radius: 0 0 40px 40px; transform: translateX(-50%); font-size: 2rem; line-height: 50px; }
-    .kiss-obj { position: absolute; font-size: 2.5rem; }
-    .effect-emoji { position: absolute; font-size: 2.5rem; animation: fadeUp 0.8s forwards; }
-    @keyframes fadeUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px); } }
+    /* Game Screens */
+    .game-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 1000; }
+    
+    #snake-canvas { background: #000; border: 2px solid #ff4d6d; display: block; margin: 80px auto 10px; box-shadow: 0 0 15px #ff4d6d; }
+    
     .stats { position: absolute; top: 20px; left: 20px; text-align: left; font-weight: bold; color: #ff4d6d; }
+    
+    /* Controls for Mobile */
+    .controls { margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); width: 150px; margin-left: auto; margin-right: auto; }
+    .ctrl-btn { padding: 15px; background: #333; color: white; border: 1px solid #444; border-radius: 5px; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -54,12 +56,13 @@
     <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
     <h1>Hehe! I Love You Tooo! 😘</h1>
     <p>hum humesha sath rahenge! ❤️</p>
-    <button class="play-btn" onclick="showStartPanel()">Play Game 💋</button>
+    <button class="play-btn" onclick="showStartPanel()">Play Catch Game 💋</button>
+    <button class="play-btn" onclick="startSnakeGame()" style="background:#ffb703;">Chick Game 🐤</button>
   </div>
 
   <div id="start-panel" class="cute-panel">
     <h2 style="color:#ff4d6d">Babu kissyan 😘</h2>
-    <button class="play-btn" onclick="startGame()" style="animation:none">Babu kissyan lenge? 👉🏻👈🏻</button>
+    <button class="play-btn" onclick="startGame()" style="animation:none">Babu kissyan den 👉🏻👈🏻</button>
   </div>
 
   <div id="end-panel" class="cute-panel">
@@ -68,81 +71,125 @@
     <button class="play-btn" onclick="location.reload()" style="animation:none">Yesii! ❤️</button>
   </div>
 
-  <div id="game-container">
-    <div class="stats">
-        💋 Score: <span id="s-val">0</span><br>
-        ❌ Miss: <span id="m-val">0</span>/3
+  <div id="game-container" class="game-screen">
+    <div class="stats">💋 Score: <span id="s-val">0</span><br>❌ Miss: <span id="m-val">0</span>/3</div>
+    <div id="basket" style="position:absolute; bottom:30px; left:50%; width:80px; height:50px; background:#ff4d6d; border-radius:0 0 40px 40px; transform:translateX(-50%); font-size:2rem; line-height:50px;">🧺</div>
+  </div>
+
+  <div id="snake-screen" class="game-screen">
+    <div class="stats">💋 Kisses: <span id="snake-score">0</span></div>
+    <canvas id="snake-canvas"></canvas>
+    <div class="controls">
+        <div></div><button class="ctrl-btn" onclick="changeDir('UP')">▲</button><div></div>
+        <button class="ctrl-btn" onclick="changeDir('LEFT')">◀</button><button class="ctrl-btn" onclick="changeDir('DOWN')">▼</button><button class="ctrl-btn" onclick="changeDir('RIGHT')">▶</button>
     </div>
-    <div id="basket">🧺</div>
   </div>
 
   <script>
     let score = 0, misses = 0, gameActive = false;
+    let chickBody, food, direction, chickInterval;
+    const canvas = document.getElementById("snake-canvas");
+    const ctx = canvas.getContext("2d");
+    const box = 20;
 
-    function showStartPanel() {
+    // --- CATCH GAME LOGIC ---
+    function showStartPanel() { document.getElementById('overlay').style.display = 'block'; document.getElementById('start-panel').style.display = 'block'; }
+    function startGame() { 
+        document.getElementById('start-panel').style.display = 'none'; document.getElementById('overlay').style.display = 'none';
+        gameActive = true; document.getElementById('game-container').style.display = 'block'; spawnCatch(); 
+    }
+
+    // --- CHICK GAME LOGIC ---
+    function startSnakeGame() {
+        document.getElementById('snake-screen').style.display = 'block';
+        canvas.width = 300; canvas.height = 300;
+        chickBody = [{x: 8 * box, y: 10 * box}];
+        food = { x: Math.floor(Math.random() * 14) * box, y: Math.floor(Math.random() * 14) * box };
+        direction = "RIGHT";
+        score = 0;
+        chickInterval = setInterval(drawChick, 180);
+    }
+
+    function changeDir(dir) { direction = dir; }
+
+    function drawChick() {
+        ctx.fillStyle = "black"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Render Chick Family
+        for(let i=0; i<chickBody.length; i++) {
+            ctx.font = "18px Arial";
+            ctx.fillText(i === 0 ? "🐤" : "🐥", chickBody[i].x, chickBody[i].y + 15);
+        }
+        
+        // Render Kissy
+        ctx.font = "20px Arial"; ctx.fillText("💋", food.x, food.y + 15);
+
+        let chickX = chickBody[0].x; let chickY = chickBody[0].y;
+        if(direction == "LEFT") chickX -= box;
+        if(direction == "UP") chickY -= box;
+        if(direction == "RIGHT") chickX += box;
+        if(direction == "DOWN") chickY += box;
+
+        if(chickX == food.x && chickY == food.y) {
+            score++; document.getElementById('snake-score').innerText = score;
+            food = { x: Math.floor(Math.random() * 14) * box, y: Math.floor(Math.random() * 14) * box };
+        } else {
+            chickBody.pop();
+        }
+
+        let newHead = {x: chickX, y: chickY};
+        if(chickX < 0 || chickX >= canvas.width || chickY < 0 || chickY >= canvas.height || collision(newHead, chickBody)) {
+            clearInterval(chickInterval);
+            gameOverFinal();
+        }
+        chickBody.unshift(newHead);
+    }
+
+    function collision(head, array) {
+        for(let i=1; i<array.length; i++) if(head.x == array[i].x && head.y == array[i].y) return true;
+        return false;
+    }
+
+    function gameOverFinal() {
+        document.querySelectorAll('.game-screen').forEach(s => s.style.display = 'none');
         document.getElementById('overlay').style.display = 'block';
-        document.getElementById('start-panel').style.display = 'block';
+        document.getElementById('end-msg').innerText = `wow januuaaa ${score} kissyan li hain`;
+        document.getElementById('end-panel').style.display = 'block';
     }
 
-    function startGame() {
-        document.getElementById('start-panel').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
-        gameActive = true;
-        document.getElementById('game-container').style.display = 'block';
-        spawn();
-    }
-
-    const basket = document.getElementById('basket');
-    const handleMove = (e) => {
-        if(!gameActive) return;
-        let x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        basket.style.left = Math.max(40, Math.min(window.innerWidth - 40, x)) + 'px';
-    };
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchmove', handleMove);
-
-    function spawn() {
+    // --- Catch Spawn Logic ---
+    function spawnCatch() {
         if(!gameActive) return;
         const k = document.createElement('div');
         k.innerText = '💋'; k.className = 'kiss-obj';
         k.style.left = Math.random() * (window.innerWidth - 40) + 'px';
         k.style.top = '-50px';
         document.getElementById('game-container').appendChild(k);
-
-        let fall = setInterval(() => {
-            let top = parseInt(k.style.top);
-            k.style.top = (top + 6) + 'px';
-            let kr = k.getBoundingClientRect(), br = basket.getBoundingClientRect();
-
-            if (kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right) {
-                score++; document.getElementById('s-val').innerText = score;
-                pop('😘', kr.left, kr.top);
-                k.remove(); clearInterval(fall);
-            } else if (top > window.innerHeight) {
-                misses++; document.getElementById('m-val').innerText = misses;
-                pop('🥺', kr.left, window.innerHeight - 60);
-                k.remove(); clearInterval(fall);
-                if(misses >= 3) gameOver();
+        let f = setInterval(() => {
+            let t = parseInt(k.style.top); k.style.top = (t+6)+'px';
+            let kr = k.getBoundingClientRect(), br = document.getElementById('basket').getBoundingClientRect();
+            if(kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right){
+                score++; document.getElementById('s-val').innerText = score; 
+                popEffect('😘', kr.left, kr.top); k.remove(); clearInterval(f);
+            } else if(t > window.innerHeight){
+                misses++; document.getElementById('m-val').innerText = misses; 
+                popEffect('🥺', kr.left, window.innerHeight-60); k.remove(); clearInterval(f);
+                if(misses >= 3) { gameActive=false; gameOverFinal(); }
             }
         }, 20);
-        if(gameActive) setTimeout(spawn, 1000);
+        if(gameActive) setTimeout(spawnCatch, 1000);
     }
 
-    function pop(emoji, x, y) {
-        const d = document.createElement('div');
-        d.innerText = emoji; d.className = 'effect-emoji';
+    function popEffect(e, x, y) {
+        const d = document.createElement('div'); d.innerText = e; d.className = 'effect-emoji';
         d.style.left = x + 'px'; d.style.top = y + 'px';
         document.getElementById('game-container').appendChild(d);
         setTimeout(() => d.remove(), 800);
     }
 
-    function gameOver() {
-        gameActive = false;
-        document.getElementById('game-container').style.display = 'none';
-        document.getElementById('overlay').style.display = 'block';
-        document.getElementById('end-msg').innerText = `wow januuaaa ${score} kissyan li he`;
-        document.getElementById('end-panel').style.display = 'block';
-    }
+    // Controls for Catch Game
+    window.addEventListener('mousemove', (e) => { if(gameActive) document.getElementById('basket').style.left = e.clientX + 'px'; });
+    window.addEventListener('touchmove', (e) => { if(gameActive) document.getElementById('basket').style.left = e.touches[0].clientX + 'px'; });
   </script>
 </body>
 </html>
