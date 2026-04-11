@@ -6,7 +6,6 @@
   <title>Our Forever ❤️</title>
   <link rel="stylesheet" href="./style.css" />
   <style>
-    /* Aapki Original UI */
     body { background-color: #1a1a1a; color: white; text-align: center; font-family: Arial, sans-serif; overflow: hidden; margin: 0; }
     .container { padding-top: 50px; }
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -17,7 +16,6 @@
       animation: pulse 1.5s infinite;
     }
 
-    /* Panels & Overlay */
     #overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1500; }
     .cute-panel {
       display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -25,11 +23,10 @@
       z-index: 2000; text-align: center; box-shadow: 0 0 20px #ff4d6d;
     }
 
-    /* Game Screens */
     .game-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 1000; }
     #snake-canvas { background: #000; border: 2px solid #ffb703; display: block; margin: 60px auto 10px; box-shadow: 0 0 15px #ffb703; border-radius: 10px; }
-    .stats { position: absolute; top: 20px; left: 20px; text-align: left; font-weight: bold; color: #ffb703; }
     
+    .stats { position: absolute; top: 20px; left: 20px; text-align: left; font-weight: bold; }
     .controls { margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); width: 180px; margin-left: auto; margin-right: auto; gap: 5px; }
     .ctrl-btn { padding: 15px; background: #333; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1.2rem; }
     
@@ -72,7 +69,7 @@
   </div>
 
   <div id="snake-screen" class="game-screen">
-    <div class="stats">💋 Kisses: <span id="snake-score">0</span></div>
+    <div class="stats" style="color:#ffb703;">💋 Kisses: <span id="snake-score">0</span></div>
     <canvas id="snake-canvas"></canvas>
     <div class="controls">
         <div></div><button class="ctrl-btn" onclick="changeDir('UP')">▲</button><div></div>
@@ -83,20 +80,51 @@
   <script>
     let score = 0, misses = 0, gameActive = false, currentGame = "";
     let chickBody, food, direction, lastTime = 0;
-    let baseSpeed = 250; // Bohat slow start
     const box = 20;
     const canvas = document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
 
     function showStartPanel() { document.getElementById('overlay').style.display = 'block'; document.getElementById('start-panel').style.display = 'block'; }
 
-    // --- CATCH GAME ---
+    // --- CATCH GAME LOGIC ---
     function startCatchGame() {
         document.getElementById('start-panel').style.display = 'none'; document.getElementById('overlay').style.display = 'none';
-        gameActive = true; currentGame = "catch"; document.getElementById('game-container').style.display = 'block'; spawnCatch();
+        gameActive = true; currentGame = "catch"; score = 0; misses = 0;
+        document.getElementById('game-container').style.display = 'block';
+        spawnCatch();
     }
 
-    // --- CHICK GAME (SMOOTH & DYNAMIC SPEED) ---
+    function spawnCatch() {
+        if(!gameActive || currentGame !== "catch") return;
+        const k = document.createElement('div');
+        k.innerText = '💋'; k.className = 'kiss-obj';
+        k.style.left = Math.random() * (window.innerWidth - 40) + 'px'; k.style.top = '-50px';
+        document.getElementById('game-container').appendChild(k);
+
+        // Catch Speed Logic: Shuru mein slow (6px), har point par thori tez
+        let fallSpeed = 5 + (score * 0.5); 
+        if(fallSpeed > 15) fallSpeed = 15; // Max speed limit
+
+        let f = setInterval(() => {
+            if(!gameActive) { clearInterval(f); k.remove(); return; }
+            let t = parseFloat(k.style.top);
+            k.style.top = (t + fallSpeed) + 'px';
+            
+            let kr = k.getBoundingClientRect(), br = document.getElementById('basket').getBoundingClientRect();
+            if(kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right) {
+                score++; document.getElementById('s-val').innerText = score; pop('😘', kr.left, kr.top); k.remove(); clearInterval(f);
+            } else if(t > window.innerHeight) {
+                misses++; document.getElementById('m-val').innerText = misses; pop('🥺', kr.left, window.innerHeight - 60); k.remove(); clearInterval(f);
+                if(misses >= 3) { gameActive = false; gameOver(); }
+            }
+        }, 20);
+        
+        // Kissy girne ka interval bhi score ke sath kam hoga (yani zyada kissyan girengi)
+        let spawnRate = Math.max(400, 1000 - (score * 30));
+        setTimeout(spawnCatch, spawnRate);
+    }
+
+    // --- CHICK GAME LOGIC ---
     function startChickGame() {
         document.getElementById('snake-screen').style.display = 'block';
         canvas.width = 300; canvas.height = 300;
@@ -106,21 +134,11 @@
         requestAnimationFrame(chickLoop);
     }
 
-    function changeDir(dir) {
-        if(dir=="UP" && direction!="DOWN") direction="UP";
-        if(dir=="DOWN" && direction!="UP") direction="DOWN";
-        if(dir=="LEFT" && direction!="RIGHT") direction="LEFT";
-        if(dir=="RIGHT" && direction!="LEFT") direction="RIGHT";
-    }
-
     function chickLoop(t) {
         if (!gameActive || currentGame !== "chick") return;
-        // Har kissy par 10ms speed barhay gi, minimum 60ms tak
-        let currentSpeed = Math.max(60, baseSpeed - (score * 10));
+        let currentSpeed = Math.max(60, 250 - (score * 10));
         if (!lastTime) lastTime = t;
-        if (t - lastTime > currentSpeed) {
-            updateChick(); drawChick(); lastTime = t;
-        }
+        if (t - lastTime > currentSpeed) { updateChick(); drawChick(); lastTime = t; }
         requestAnimationFrame(chickLoop);
     }
 
@@ -136,38 +154,24 @@
         let head = { ...chickBody[0] };
         if(direction === "UP") head.y -= box; if(direction === "DOWN") head.y += box;
         if(direction === "LEFT") head.x -= box; if(direction === "RIGHT") head.x += box;
-
         if(head.x === food.x && head.y === food.y) {
             score++; document.getElementById('snake-score').innerText = score;
             food = { x: Math.floor(Math.random() * 14) * box, y: Math.floor(Math.random() * 14) * box };
         } else { chickBody.pop(); }
-
         if(head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || chickBody.some(p => p.x === head.x && p.y === head.y)) {
             gameActive = false; gameOver(); return;
         }
         chickBody.unshift(head);
     }
 
-    // --- CATCH SPAWN & SHARED LOGIC ---
-    function spawnCatch() {
-        if(!gameActive || currentGame !== "catch") return;
-        const k = document.createElement('div');
-        k.innerText = '💋'; k.className = 'kiss-obj';
-        k.style.left = Math.random() * (window.innerWidth - 40) + 'px'; k.style.top = '-50px';
-        document.getElementById('game-container').appendChild(k);
-        let f = setInterval(() => {
-            let t = parseInt(k.style.top); k.style.top = (t + 6) + 'px';
-            let kr = k.getBoundingClientRect(), br = document.getElementById('basket').getBoundingClientRect();
-            if(kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right) {
-                score++; document.getElementById('s-val').innerText = score; pop('😘', kr.left, kr.top); k.remove(); clearInterval(f);
-            } else if(t > window.innerHeight) {
-                misses++; document.getElementById('m-val').innerText = misses; pop('🥺', kr.left, window.innerHeight - 60); k.remove(); clearInterval(f);
-                if(misses >= 3) { gameActive = false; gameOver(); }
-            }
-        }, 20);
-        setTimeout(spawnCatch, 1000);
+    function changeDir(dir) {
+        if(dir=="UP" && direction!="DOWN") direction="UP";
+        if(dir=="DOWN" && direction!="UP") direction="DOWN";
+        if(dir=="LEFT" && direction!="RIGHT") direction="LEFT";
+        if(dir=="RIGHT" && direction!="LEFT") direction="RIGHT";
     }
 
+    // --- SHARED FUNCTIONS ---
     function pop(e, x, y) {
         const d = document.createElement('div'); d.innerText = e; d.className = 'effect-emoji';
         d.style.left = x + 'px'; d.style.top = y + 'px';
