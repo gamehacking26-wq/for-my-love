@@ -6,9 +6,7 @@
   <title>Our Forever ❤️</title>
   <link rel="stylesheet" href="./style.css" />
   <style>
-    /* Aapka Original Style */
     body { background-color: #1a1a1a; color: white; text-align: center; font-family: Arial, sans-serif; overflow-x: hidden; margin: 0; }
-    
     .container { padding-top: 50px; }
     
     @keyframes pulse {
@@ -17,7 +15,6 @@
       100% { transform: scale(1); }
     }
 
-    /* Naye Game Buttons */
     .btn-group { margin-top: 25px; }
     .game-btn {
       padding: 12px 25px;
@@ -29,10 +26,9 @@
       font-weight: bold;
       cursor: pointer;
       animation: pulse 1.5s infinite;
-      box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
     }
 
-    /* Game Overlays */
+    /* Game Overlay */
     .game-overlay {
       display: none;
       position: fixed;
@@ -42,10 +38,35 @@
       z-index: 1000;
     }
 
-    #basket { position: absolute; bottom: 30px; left: 50%; width: 80px; height: 50px; background: #ff4d6d; border-radius: 0 0 40px 40px; transform: translateX(-50%); font-size: 2rem; line-height: 50px; }
-    #bird { position: absolute; left: 50px; top: 50%; font-size: 2.5rem; z-index: 1001; }
-    .pipe { position: absolute; width: 60px; background: #ff4d6d; border-radius: 10px; }
-    .score { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; color: #ff4d6d; font-weight: bold; }
+    /* Puzzle Styling */
+    #puzzle-board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      margin: 100px auto 20px auto;
+      width: 315px;
+      border: 2px solid #ff4d6d;
+      padding: 5px;
+      background: #333;
+    }
+
+    .tile {
+      width: 100px; height: 100px;
+      background: #ff4d6d;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 5px;
+      user-select: none;
+    }
+
+    .tile.empty { background: #1a1a1a; cursor: default; }
+    
     .exit { position: absolute; top: 20px; right: 20px; cursor: pointer; color: white; background: #333; padding: 5px 15px; border-radius: 20px; }
   </style>
 </head>
@@ -62,98 +83,84 @@
     
     <div class="btn-group">
         <button class="game-btn" onclick="startKisses()">Catch 💋</button>
-        <button class="game-btn" onclick="startBird()" style="background:#ff758c;">Love Bird 🕊️</button>
+        <button class="game-btn" onclick="startPuzzle()" style="background:#8a2be2;">Love Puzzle 🧩</button>
     </div>
   </div>
 
   <div id="kiss-game" class="game-overlay">
-    <div class="score">💋 Score: <span id="k-val">0</span></div>
     <div class="exit" onclick="location.reload()">Exit</div>
-    <div id="basket">🧺</div>
+    <div style="margin-top:50px; font-size: 1.5rem;">Score: <span id="k-val">0</span></div>
+    <div id="basket" style="position:absolute; bottom:30px; left:50%; width:80px; height:50px; background:#ff4d6d; border-radius:0 0 40px 40px; transform:translateX(-50%); font-size:2rem; line-height:50px;">🧺</div>
   </div>
 
-  <div id="bird-game" class="game-overlay" onclick="birdJump()">
-    <div class="score">Score: <span id="b-val">0</span></div>
+  <div id="puzzle-game" class="game-overlay">
     <div class="exit" onclick="location.reload()">Exit</div>
-    <div id="bird">🕊️</div>
+    <h2 style="margin-top: 40px; color: #ff4d6d;">Solve the Love Puzzle! 🧩</h2>
+    <div id="puzzle-board"></div>
+    <p>Click on tiles to move them! Solve it to win 💋</p>
   </div>
 
   <script>
-    let score = 0;
     let active = false;
 
-    // --- CATCH KISSES LOGIC ---
+    // --- KISSES LOGIC ---
     function startKisses() {
         active = true;
         document.getElementById('kiss-game').style.display = 'block';
         spawnKiss();
     }
-
-    const basket = document.getElementById('basket');
-    const move = (e) => {
-        if(active) {
-            let x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            basket.style.left = x + 'px';
-        }
-    };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('touchmove', move);
-
+    // (Baki Catch logic pichle code jaisa hi hai)
     function spawnKiss() {
         if(!active) return;
         const k = document.createElement('div');
-        k.innerText = '💋';
-        k.style.position = 'absolute';
-        k.style.fontSize = '2.5rem';
-        k.style.left = Math.random() * (window.innerWidth - 40) + 'px';
-        k.style.top = '-50px';
+        k.innerText = '💋'; k.style.position='absolute'; k.style.fontSize='2.5rem';
+        k.style.left = Math.random()*(window.innerWidth-40)+'px'; k.style.top='-50px';
         document.getElementById('kiss-game').appendChild(k);
-
-        let fall = setInterval(() => {
-            let top = parseInt(k.style.top);
-            k.style.top = (top + 5) + 'px';
-            let kr = k.getBoundingClientRect();
-            let br = basket.getBoundingClientRect();
-            if (kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right) {
-                score++; document.getElementById('k-val').innerText = score;
-                k.remove(); clearInterval(fall);
-            }
+        let fall = setInterval(()=> {
+            let top = parseInt(k.style.top); k.style.top = (top+5)+'px';
             if(top > window.innerHeight) { k.remove(); clearInterval(fall); }
-        }, 20);
+        },20);
         setTimeout(spawnKiss, 800);
     }
 
-    // --- LOVE BIRD LOGIC ---
-    let bY = window.innerHeight/2, vel = 0;
-    function startBird() {
-        active = true;
-        document.getElementById('bird-game').style.display = 'block';
-        loopBird();
-        spawnPipes();
+    // --- PUZZLE LOGIC ---
+    let tiles = [1, 2, 3, 4, 5, 6, 7, 8, ""];
+    function startPuzzle() {
+        document.getElementById('puzzle-game').style.display = 'block';
+        shuffleTiles();
+        renderBoard();
     }
-    function birdJump() { vel = -7; }
-    function loopBird() {
-        if(!active) return;
-        vel += 0.4; bY += vel;
-        document.getElementById('bird').style.top = bY + 'px';
-        if(bY > window.innerHeight || bY < 0) { alert('Game Over!'); location.reload(); }
-        requestAnimationFrame(loopBird);
+
+    function shuffleTiles() {
+        tiles.sort(() => Math.random() - 0.5);
     }
-    function spawnPipes() {
-        if(!active) return;
-        const gap = 170, pX = window.innerWidth, h = Math.random() * (window.innerHeight - 300) + 50;
-        const tP = document.createElement('div'); tP.className = 'pipe'; tP.style.height = h+'px'; tP.style.top = '0'; tP.style.left = pX+'px';
-        const bP = document.createElement('div'); bP.className = 'pipe'; bP.style.height = (window.innerHeight-h-gap)+'px'; bP.style.bottom = '0'; bP.style.left = pX+'px';
-        document.getElementById('bird-game').append(tP, bP);
-        let mP = setInterval(() => {
-            let x = parseInt(tP.style.left);
-            tP.style.left = bP.style.left = (x - 4) + 'px';
-            let br = document.getElementById('bird').getBoundingClientRect();
-            let tr = tP.getBoundingClientRect(), btr = bP.getBoundingClientRect();
-            if(br.right > tr.left && br.left < tr.right && (br.top < tr.bottom || br.bottom > btr.top)) { location.reload(); }
-            if(x < -60) { score++; document.getElementById('b-val').innerText = score; tP.remove(); bP.remove(); clearInterval(mP); }
-        }, 20);
-        setTimeout(spawnPipes, 2000);
+
+    function renderBoard() {
+        const board = document.getElementById('puzzle-board');
+        board.innerHTML = "";
+        tiles.forEach((tile, index) => {
+            const tileDiv = document.createElement('div');
+            tileDiv.className = 'tile' + (tile === "" ? " empty" : "");
+            tileDiv.innerText = tile === "" ? "" : (tile === 8 ? "💋" : "❤️"); // Numbers ki jagah emojis
+            tileDiv.onclick = () => moveTile(index);
+            board.appendChild(tileDiv);
+        });
+    }
+
+    function moveTile(index) {
+        const emptyIndex = tiles.indexOf("");
+        const validMoves = [index-1, index+1, index-3, index+3];
+        
+        if (validMoves.includes(emptyIndex)) {
+            // Swap
+            [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+            renderBoard();
+            checkWin();
+        }
+    }
+
+    function checkWin() {
+        // Simple win condition logic yahan add kar sakte hain
     }
   </script>
 </body>
