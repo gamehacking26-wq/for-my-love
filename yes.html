@@ -28,46 +28,59 @@
       box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
     }
 
+    /* --- Cute Kissy Panel (Modal) --- */
+    #kissy-panel {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 280px;
+      background: #fff;
+      color: #333;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(255, 77, 109, 0.6);
+      z-index: 2000;
+    }
+
+    #kissy-panel h2 { font-size: 1.2rem; margin-bottom: 15px; color: #ff4d6d; }
+
+    .kissy-btn {
+      padding: 10px 20px;
+      background: #ff4d6d;
+      color: white;
+      border: none;
+      border-radius: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* Game Overlay */
     #game-container {
       display: none;
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0,0,0,0.95);
+      background: rgba(0,0,0,0.9);
       z-index: 1000;
     }
 
     #basket {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      width: 80px; height: 50px;
-      background: #ff4d6d;
-      border-radius: 0 0 40px 40px;
-      transform: translateX(-50%);
-      font-size: 2rem;
-      line-height: 50px;
+      position: absolute; bottom: 30px; left: 50%; width: 80px; height: 50px;
+      background: #ff4d6d; border-radius: 0 0 40px 40px;
+      transform: translateX(-50%); font-size: 2rem; line-height: 50px;
     }
 
     .kiss-obj { position: absolute; font-size: 2.5rem; user-select: none; }
-
-    .effect-emoji {
-      position: absolute;
-      font-size: 2.5rem;
-      animation: fadeUp 0.8s ease-out forwards;
-    }
+    .effect-emoji { position: absolute; font-size: 2.5rem; animation: fadeUp 0.8s ease-out forwards; }
 
     @keyframes fadeUp {
       0% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-100px); }
     }
 
-    /* Score and Miss Text */
-    .game-stats { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; font-weight: bold; }
-    .score-box { color: #ff4d6d; font-size: 1.2rem; }
-    .miss-box { color: #ffb3c1; font-size: 1rem; }
-    
-    .exit-btn { position: absolute; top: 70px; right: 20px; cursor: pointer; color: white; background: #333; padding: 5px 15px; border-radius: 20px; }
+    .score-text { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; color: #ff4d6d; font-weight: bold; }
+    .exit-btn { position: absolute; top: 20px; right: 20px; cursor: pointer; color: white; background: #333; padding: 5px 15px; border-radius: 20px; }
   </style>
 </head>
 <body>
@@ -80,33 +93,39 @@
     <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
     <h1>Hehe! I Love You Tooo! 😘</h1>
     <p>hum humesha sath rahenge! ❤️</p>
-    <button class="play-btn" onclick="startGame()">Play Cute Game 💋</button>
+    
+    <button class="play-btn" onclick="showPanel()">Play Cute Game 💋</button>
+  </div>
+
+  <div id="kissy-panel">
+    <h2>Aise kaise game? Pehle...</h2>
+    <button class="kissy-btn" onclick="startGame()">Button meko kissy 👉🏻👈🏻</button>
   </div>
 
   <div id="game-container">
-    <div class="game-stats">
-        <div class="score-box">Jitne kissyan diye: (<span id="score-val">00</span>) hehe</div>
-        <div class="miss-box" id="miss-text">meko aur kissyan 🥺</div>
-    </div>
+    <div class="score-text">Score: <span id="score-val">0</span></div>
     <div class="exit-btn" onclick="location.reload()">Exit</div>
     <div id="basket">🧺</div>
   </div>
 
   <script>
     let score = 0;
-    let misses = 0;
     let gameActive = false;
-    const basket = document.getElementById('basket');
-    const gameScreen = document.getElementById('game-container');
+
+    function showPanel() {
+        document.getElementById('kissy-panel').style.display = 'block';
+    }
 
     function startGame() {
+        document.getElementById('kissy-panel').style.display = 'none';
         gameActive = true;
         score = 0;
-        misses = 0;
-        gameScreen.style.display = 'block';
+        document.getElementById('game-container').style.display = 'block';
         spawnKiss();
     }
 
+    // Basket Controls
+    const basket = document.getElementById('basket');
     const move = (e) => {
         if(!gameActive) return;
         let x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
@@ -117,49 +136,31 @@
 
     function spawnKiss() {
         if(!gameActive) return;
-
         const kiss = document.createElement('div');
         kiss.innerText = '💋';
         kiss.className = 'kiss-obj';
         kiss.style.left = Math.random() * (window.innerWidth - 40) + 'px';
         kiss.style.top = '-50px';
-        gameScreen.appendChild(kiss);
+        document.getElementById('game-container').appendChild(kiss);
 
         let fall = setInterval(() => {
             let top = parseInt(kiss.style.top);
             kiss.style.top = (top + 6) + 'px';
+            let kr = kiss.getBoundingClientRect();
+            let br = basket.getBoundingClientRect();
 
-            let kRect = kiss.getBoundingClientRect();
-            let bRect = basket.getBoundingClientRect();
-
-            // Catch Logic
-            if (kRect.bottom >= bRect.top && kRect.right >= bRect.left && kRect.left <= bRect.right) {
+            if (kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right) {
                 score++;
-                let displayScore = score < 10 ? '0' + score : score;
-                document.getElementById('score-val').innerText = displayScore;
-                showEmoji('😘', kRect.left, kRect.top);
-                kiss.remove();
-                clearInterval(fall);
+                document.getElementById('score-val').innerText = score;
+                showEmoji('😘', kr.left, kr.top);
+                kiss.remove(); clearInterval(fall);
             }
-
-            // Miss Logic
             if (top > window.innerHeight) {
-                misses++;
-                showEmoji('🥺', kRect.left, window.innerHeight - 50);
-                kiss.remove();
-                clearInterval(fall);
-
-                if(misses >= 3) {
-                    gameActive = false;
-                    setTimeout(() => {
-                        alert("Ab meri kissy nhi li naw! 🥺 Game Over.\nScore: " + score);
-                        location.reload();
-                    }, 500);
-                }
+                showEmoji('🥺', kr.left, window.innerHeight - 50);
+                kiss.remove(); clearInterval(fall);
             }
         }, 20);
-
-        if(gameActive) setTimeout(spawnKiss, 1000);
+        setTimeout(spawnKiss, 1000);
     }
 
     function showEmoji(emoji, x, y) {
@@ -168,7 +169,7 @@
         div.className = 'effect-emoji';
         div.style.left = x + 'px';
         div.style.top = y + 'px';
-        gameScreen.appendChild(div);
+        document.getElementById('game-container').appendChild(div);
         setTimeout(() => div.remove(), 800);
     }
   </script>
