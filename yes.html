@@ -26,32 +26,46 @@
     .game-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 1000; }
     #snake-canvas { background: #000; border: 2px solid #ffb703; display: block; margin: 60px auto 10px; box-shadow: 0 0 15px #ffb703; border-radius: 10px; }
     .stats { position: absolute; top: 20px; left: 20px; text-align: left; font-weight: bold; color: #ffb703; }
-
-    .controls { margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); width: 180px; margin: 20px auto; gap: 5px; }
+    
+    .controls { margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); width: 180px; margin-left: auto; margin-right: auto; gap: 5px; }
     .ctrl-btn { padding: 15px; background: #333; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1.2rem; }
+    
+    #basket { position: absolute; bottom: 30px; left: 50%; width: 80px; height: 50px; background: #ff4d6d; border-radius: 0 0 40px 40px; transform: translateX(-50%); font-size: 2rem; line-height: 50px; }
+    .kiss-obj { position: absolute; font-size: 2.5rem; }
+    .effect-emoji { position: absolute; font-size: 2.5rem; animation: fadeUp 0.8s forwards; }
+    @keyframes fadeUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px); } }
   </style>
 </head>
 <body>
 
   <div id="overlay"></div>
 
-  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">Dev by Faisal</div>
-
-  <div class="container">
-    <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
+  <div class="container" id="main-ui">
+    <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
     <h1>Hehe! I Love You Tooo! 😘</h1>
     <p>hum humesha sath rahenge! ❤️</p>
-    <button class="play-btn" onclick="startSnakeGame()" style="background:#ffb703;">Chick Game 🐤</button>
+    <button class="play-btn" onclick="showStartPanel()">Play Catch Game 💋</button>
+    <button class="play-btn" onclick="startChickGame()" style="background:#ffb703;">Chick Game 🐤</button>
+  </div>
+
+  <div id="start-panel" class="cute-panel">
+    <h2 style="color:#ff4d6d">Babu kissyan 😘</h2>
+    <button class="play-btn" onclick="startCatchGame()" style="animation:none">Babu kissyan den 👉🏻👈🏻</button>
   </div>
 
   <div id="end-panel" class="cute-panel">
-    <h2 id="end-msg" style="color:#ff4d6d"></h2>
+    <h2 id="end-msg"></h2>
     <p>aur kissyan lenge kiaa 🤭</p>
     <button class="play-btn" onclick="location.reload()" style="animation:none">Yesii! ❤️</button>
   </div>
 
+  <div id="game-container" class="game-screen">
+    <div class="stats" style="color:#ff4d6d;">💋 Score: <span id="s-val">0</span><br>❌ Miss: <span id="m-val">0</span>/3</div>
+    <div id="basket">🧺</div>
+  </div>
+
   <div id="snake-screen" class="game-screen">
-    <div class="stats">💋 Score: <span id="snake-score">0</span></div>
+    <div class="stats">💋 Kisses: <span id="snake-score">0</span></div>
     <canvas id="snake-canvas"></canvas>
     <div class="controls">
         <div></div><button class="ctrl-btn" onclick="changeDir('UP')">▲</button><div></div>
@@ -60,100 +74,107 @@
   </div>
 
   <script>
+    let score = 0, misses = 0, gameActive = false, currentGame = "";
+    let chickBody, food, direction, lastTime = 0, baseSpeed = 160;
+    const box = 20;
     const canvas = document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
-    const box = 20;
-    let score, chickBody, food, direction, nextDir, gameSpeed, lastTime;
 
-    function startSnakeGame() {
+    function showStartPanel() { document.getElementById('overlay').style.display = 'block'; document.getElementById('start-panel').style.display = 'block'; }
+
+    // --- CATCH GAME ---
+    function startCatchGame() {
+        document.getElementById('start-panel').style.display = 'none'; document.getElementById('overlay').style.display = 'none';
+        gameActive = true; currentGame = "catch"; document.getElementById('game-container').style.display = 'block'; spawnCatch();
+    }
+
+    // --- CHICK GAME ---
+    function startChickGame() {
         document.getElementById('snake-screen').style.display = 'block';
         canvas.width = 300; canvas.height = 300;
-        chickBody = [{x: 6 * box, y: 7 * box}];
-        food = getRandomFood();
-        direction = "RIGHT";
-        nextDir = "RIGHT";
-        score = 0;
-        gameSpeed = 200; // Shuru mein slow speed
-        lastTime = 0;
-        requestAnimationFrame(gameLoop);
+        chickBody = [{x: 8 * box, y: 10 * box}];
+        food = { x: Math.floor(Math.random() * 14) * box, y: Math.floor(Math.random() * 14) * box };
+        direction = "RIGHT"; score = 0; lastTime = 0; gameActive = true; currentGame = "chick";
+        requestAnimationFrame(chickLoop);
     }
 
     function changeDir(dir) {
-        if (dir === 'UP' && direction !== 'DOWN') nextDir = 'UP';
-        if (dir === 'DOWN' && direction !== 'UP') nextDir = 'DOWN';
-        if (dir === 'LEFT' && direction !== 'RIGHT') nextDir = 'LEFT';
-        if (dir === 'RIGHT' && direction !== 'LEFT') nextDir = 'RIGHT';
+        if(dir=="UP" && direction!="DOWN") direction="UP";
+        if(dir=="DOWN" && direction!="UP") direction="DOWN";
+        if(dir=="LEFT" && direction!="RIGHT") direction="LEFT";
+        if(dir=="RIGHT" && direction!="LEFT") direction="RIGHT";
     }
 
-    function getRandomFood() {
-        return { x: Math.floor(Math.random() * 14) * box, y: Math.floor(Math.random() * 14) * box };
-    }
-
-    function gameLoop(currentTime) {
-        if (!document.getElementById('snake-screen').style.display || document.getElementById('snake-screen').style.display === 'none') return;
-        
-        requestAnimationFrame(gameLoop);
-        const deltaTime = currentTime - lastTime;
-        if (deltaTime < gameSpeed) return;
-        lastTime = currentTime;
-
-        update();
-        draw();
-    }
-
-    function update() {
-        direction = nextDir;
-        let headX = chickBody[0].x;
-        let headY = chickBody[0].y;
-
-        if (direction === "LEFT") headX -= box;
-        if (direction === "UP") headY -= box;
-        if (direction === "RIGHT") headX += box;
-        if (direction === "DOWN") headY += box;
-
-        if (headX === food.x && headY === food.y) {
-            score++;
-            document.getElementById('snake-score').innerText = score;
-            food = getRandomFood();
-            // Speed increase logic: Har kissy par speed 5ms fast hogi (minimum 80ms tak)
-            if (gameSpeed > 80) gameSpeed -= 5;
-        } else {
-            chickBody.pop();
+    function chickLoop(t) {
+        if (!gameActive || currentGame !== "chick") return;
+        let speed = Math.max(70, baseSpeed - (score * 8));
+        if (!lastTime) lastTime = t;
+        if (t - lastTime > speed) {
+            updateChick(); drawChick(); lastTime = t;
         }
-
-        let newHead = { x: headX, y: headY };
-        if (headX < 0 || headX >= canvas.width || headY < 0 || headY >= canvas.height || collision(newHead, chickBody)) {
-            gameOver();
-        }
-        chickBody.unshift(newHead);
+        requestAnimationFrame(chickLoop);
     }
 
-    function draw() {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        for (let i = 0; i < chickBody.length; i++) {
-            ctx.font = "18px Arial";
-            ctx.fillText(i === 0 ? "🐤" : "🐥", chickBody[i].x, chickBody[i].y + 15);
-        }
-
-        ctx.font = "20px Arial";
-        ctx.fillText("💋", food.x, food.y + 15);
+    function drawChick() {
+        ctx.fillStyle = "black"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        chickBody.forEach((part, i) => {
+            ctx.font = "18px Arial"; ctx.fillText(i === 0 ? "🐤" : "🐥", part.x, part.y + 15);
+        });
+        ctx.font = "20px Arial"; ctx.fillText("💋", food.x, food.y + 15);
     }
 
-    function collision(head, array) {
-        for (let i = 0; i < array.length; i++) {
-            if (head.x === array[i].x && head.y === array[i].y) return true;
+    function updateChick() {
+        let head = { ...chickBody[0] };
+        if(direction === "UP") head.y -= box; if(direction === "DOWN") head.y += box;
+        if(direction === "LEFT") head.x -= box; if(direction === "RIGHT") head.x += box;
+
+        if(head.x === food.x && head.y === food.y) {
+            score++; document.getElementById('snake-score').innerText = score;
+            food = { x: Math.floor(Math.random() * 14) * box, y: Math.floor(Math.random() * 14) * box };
+        } else { chickBody.pop(); }
+
+        if(head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || chickBody.some(p => p.x === head.x && p.y === head.y)) {
+            gameActive = false; gameOver(); return;
         }
-        return false;
+        chickBody.unshift(head);
+    }
+
+    // --- SHARED LOGIC ---
+    function spawnCatch() {
+        if(!gameActive || currentGame !== "catch") return;
+        const k = document.createElement('div');
+        k.innerText = '💋'; k.className = 'kiss-obj';
+        k.style.left = Math.random() * (window.innerWidth - 40) + 'px'; k.style.top = '-50px';
+        document.getElementById('game-container').appendChild(k);
+        let f = setInterval(() => {
+            let t = parseInt(k.style.top); k.style.top = (t + 6) + 'px';
+            let kr = k.getBoundingClientRect(), br = document.getElementById('basket').getBoundingClientRect();
+            if(kr.bottom >= br.top && kr.right >= br.left && kr.left <= br.right) {
+                score++; document.getElementById('s-val').innerText = score; pop('😘', kr.left, kr.top); k.remove(); clearInterval(f);
+            } else if(t > window.innerHeight) {
+                misses++; document.getElementById('m-val').innerText = misses; pop('🥺', kr.left, window.innerHeight - 60); k.remove(); clearInterval(f);
+                if(misses >= 3) { gameActive = false; gameOver(); }
+            }
+        }, 20);
+        setTimeout(spawnCatch, 1000);
+    }
+
+    function pop(e, x, y) {
+        const d = document.createElement('div'); d.innerText = e; d.className = 'effect-emoji';
+        d.style.left = x + 'px'; d.style.top = y + 'px';
+        document.getElementById('game-container').appendChild(d);
+        setTimeout(() => d.remove(), 800);
     }
 
     function gameOver() {
-        document.getElementById('snake-screen').style.display = 'none';
+        document.querySelectorAll('.game-screen').forEach(s => s.style.display = 'none');
         document.getElementById('overlay').style.display = 'block';
         document.getElementById('end-msg').innerText = `wow januuaaa ${score} kissyan li hain`;
         document.getElementById('end-panel').style.display = 'block';
     }
+
+    window.addEventListener('mousemove', (e) => { if(gameActive && currentGame === "catch") document.getElementById('basket').style.left = e.clientX + 'px'; });
+    window.addEventListener('touchmove', (e) => { if(gameActive && currentGame === "catch") document.getElementById('basket').style.left = e.touches[0].clientX + 'px'; });
   </script>
 </body>
 </html>
