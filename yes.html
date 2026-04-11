@@ -4,9 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Our Forever ❤️</title>
-  <link rel="stylesheet" href="./style.css" />
   <style>
-    body { background-color: #1a1a1a; color: white; text-align: center; font-family: Arial, sans-serif; overflow-x: hidden; margin: 0; }
+    body { background-color: #1a1a1a; color: white; text-align: center; font-family: Arial, sans-serif; overflow: hidden; margin: 0; }
     .container { padding-top: 50px; }
     
     @keyframes pulse {
@@ -15,59 +14,59 @@
       100% { transform: scale(1); }
     }
 
-    .btn-group { margin-top: 25px; }
-    .game-btn {
-      padding: 12px 25px;
-      margin: 10px;
-      border: none;
-      border-radius: 50px;
+    .play-btn {
+      margin-top: 25px;
+      padding: 15px 40px;
       background: #ff4d6d;
       color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.2rem;
       font-weight: bold;
       cursor: pointer;
       animation: pulse 1.5s infinite;
+      box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
     }
 
     /* Game Overlay */
-    .game-overlay {
+    #game-container {
       display: none;
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0,0,0,0.95);
+      background: linear-gradient(to bottom, #1a1a1a, #4a0e1c);
       z-index: 1000;
     }
 
-    /* Puzzle Styling */
-    #puzzle-board {
-      display: grid;
-      grid-template-columns: repeat(3, 100px);
-      grid-template-rows: repeat(3, 100px);
-      gap: 5px;
-      margin: 100px auto 20px auto;
-      width: 315px;
-      border: 2px solid #ff4d6d;
-      padding: 5px;
-      background: #333;
-    }
-
-    .tile {
-      width: 100px; height: 100px;
+    #basket {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      width: 90px; height: 60px;
       background: #ff4d6d;
-      color: white;
+      border-radius: 10px 10px 50px 50px;
+      transform: translateX(-50%);
       font-size: 2rem;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border-radius: 5px;
-      user-select: none;
+      line-height: 60px;
+      box-shadow: 0 5px 15px rgba(255, 77, 109, 0.5);
     }
 
-    .tile.empty { background: #1a1a1a; cursor: default; }
-    
-    .exit { position: absolute; top: 20px; right: 20px; cursor: pointer; color: white; background: #333; padding: 5px 15px; border-radius: 20px; }
+    .kiss-obj { position: absolute; font-size: 2.5rem; user-select: none; }
+
+    .effect-emoji {
+      position: absolute;
+      font-size: 2.5rem;
+      animation: fadeUp 0.8s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes fadeUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-100px); }
+    }
+
+    .score-text { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; color: #ff4d6d; font-weight: bold; }
+    .exit-btn { position: absolute; top: 20px; right: 20px; cursor: pointer; color: white; background: #333; padding: 5px 15px; border-radius: 20px; }
   </style>
 </head>
 <body>
@@ -76,91 +75,87 @@
     Dev by Faisal
   </div>
 
-  <div class="container">
+  <div class="container" id="main-ui">
     <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
     <h1>Hehe! I Love You Tooo! 😘</h1>
-    <p>Hum humesha sath rahenge! ❤️</p>
-    
-    <div class="btn-group">
-        <button class="game-btn" onclick="startKisses()">Catch 💋</button>
-        <button class="game-btn" onclick="startPuzzle()" style="background:#8a2be2;">Love Puzzle 🧩</button>
-    </div>
+    <p>Hum hamesha sath rahenge! ❤️</p>
+    <button class="play-btn" onclick="startGame()">🎮 Play Catch Game 💋</button>
   </div>
 
-  <div id="kiss-game" class="game-overlay">
-    <div class="exit" onclick="location.reload()">Exit</div>
-    <div style="margin-top:50px; font-size: 1.5rem;">Score: <span id="k-val">0</span></div>
-    <div id="basket" style="position:absolute; bottom:30px; left:50%; width:80px; height:50px; background:#ff4d6d; border-radius:0 0 40px 40px; transform:translateX(-50%); font-size:2rem; line-height:50px;">🧺</div>
-  </div>
-
-  <div id="puzzle-game" class="game-overlay">
-    <div class="exit" onclick="location.reload()">Exit</div>
-    <h2 style="margin-top: 40px; color: #ff4d6d;">Solve the Love Puzzle! 🧩</h2>
-    <div id="puzzle-board"></div>
-    <p>Click on tiles to move them! Solve it to win 💋</p>
+  <div id="game-container">
+    <div class="score-text">Kisses: <span id="score-val">0</span></div>
+    <div class="exit-btn" onclick="location.reload()">Exit</div>
+    <div id="basket">🧺</div>
   </div>
 
   <script>
-    let active = false;
+    let score = 0;
+    let gameActive = false;
+    const basket = document.getElementById('basket');
+    const gameScreen = document.getElementById('game-container');
 
-    // --- KISSES LOGIC ---
-    function startKisses() {
-        active = true;
-        document.getElementById('kiss-game').style.display = 'block';
+    function startGame() {
+        gameActive = true;
+        score = 0;
+        document.getElementById('score-val').innerText = score;
+        gameScreen.style.display = 'block';
         spawnKiss();
     }
-    // (Baki Catch logic pichle code jaisa hi hai)
+
+    // Move Basket
+    const move = (e) => {
+        if(!gameActive) return;
+        let x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        basket.style.left = Math.max(45, Math.min(window.innerWidth - 45, x)) + 'px';
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('touchmove', move);
+
     function spawnKiss() {
-        if(!active) return;
-        const k = document.createElement('div');
-        k.innerText = '💋'; k.style.position='absolute'; k.style.fontSize='2.5rem';
-        k.style.left = Math.random()*(window.innerWidth-40)+'px'; k.style.top='-50px';
-        document.getElementById('kiss-game').appendChild(k);
-        let fall = setInterval(()=> {
-            let top = parseInt(k.style.top); k.style.top = (top+5)+'px';
-            if(top > window.innerHeight) { k.remove(); clearInterval(fall); }
-        },20);
-        setTimeout(spawnKiss, 800);
+        if(!gameActive) return;
+
+        const kiss = document.createElement('div');
+        kiss.innerText = '💋';
+        kiss.className = 'kiss-obj';
+        kiss.style.left = Math.random() * (window.innerWidth - 40) + 'px';
+        kiss.style.top = '-50px';
+        gameScreen.appendChild(kiss);
+
+        let fallInterval = setInterval(() => {
+            let top = parseInt(kiss.style.top);
+            kiss.style.top = (top + 6) + 'px';
+
+            let kRect = kiss.getBoundingClientRect();
+            let bRect = basket.getBoundingClientRect();
+
+            // 1. CATCH LOGIC
+            if (kRect.bottom >= bRect.top && kRect.right >= bRect.left && kRect.left <= bRect.right) {
+                score++;
+                document.getElementById('score-val').innerText = score;
+                showEffect('😘', kRect.left, kRect.top); // Catch par happy face
+                kiss.remove();
+                clearInterval(fallInterval);
+            }
+
+            // 2. MISS LOGIC
+            if (top > window.innerHeight) {
+                showEffect('🥺', kRect.left, window.innerHeight - 50); // Miss par sad face
+                kiss.remove();
+                clearInterval(fallInterval);
+            }
+        }, 20);
+
+        setTimeout(spawnKiss, 1000);
     }
 
-    // --- PUZZLE LOGIC ---
-    let tiles = [1, 2, 3, 4, 5, 6, 7, 8, ""];
-    function startPuzzle() {
-        document.getElementById('puzzle-game').style.display = 'block';
-        shuffleTiles();
-        renderBoard();
-    }
-
-    function shuffleTiles() {
-        tiles.sort(() => Math.random() - 0.5);
-    }
-
-    function renderBoard() {
-        const board = document.getElementById('puzzle-board');
-        board.innerHTML = "";
-        tiles.forEach((tile, index) => {
-            const tileDiv = document.createElement('div');
-            tileDiv.className = 'tile' + (tile === "" ? " empty" : "");
-            tileDiv.innerText = tile === "" ? "" : (tile === 8 ? "💋" : "❤️"); // Numbers ki jagah emojis
-            tileDiv.onclick = () => moveTile(index);
-            board.appendChild(tileDiv);
-        });
-    }
-
-    function moveTile(index) {
-        const emptyIndex = tiles.indexOf("");
-        const validMoves = [index-1, index+1, index-3, index+3];
-        
-        if (validMoves.includes(emptyIndex)) {
-            // Swap
-            [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
-            renderBoard();
-            checkWin();
-        }
-    }
-
-    function checkWin() {
-        // Simple win condition logic yahan add kar sakte hain
+    function showEffect(emoji, x, y) {
+        const div = document.createElement('div');
+        div.innerText = emoji;
+        div.className = 'effect-emoji';
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+        gameScreen.appendChild(div);
+        setTimeout(() => div.remove(), 800);
     }
   </script>
 </body>
