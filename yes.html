@@ -5,28 +5,164 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Our Forever ❤️</title>
   <link rel="stylesheet" href="./style.css" />
-</head>
-<body>
-  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
-    Dev by Faisal
-  </div>
-
-  <div class="container">
-    <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
-
-    <h1>Hehe! I Love You Tooo! 😘</h1>
-    <p>hum humesha sath rahenge! ❤️</p>
- 
-  </div>
-
-  <script src="./script.js"></script>
-
   <style>
+    body { background-color: #1a1a1a; color: white; text-align: center; font-family: Arial, sans-serif; overflow-x: hidden; }
+    
+    .container { padding-top: 50px; transition: 0.5s; }
+    
+    /* Game Styles */
+    #game-container {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 100;
+    }
+
+    #basket {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      width: 80px; height: 50px;
+      background: #ff4d6d;
+      border-radius: 0 0 40px 40px;
+      transform: translateX(-50%);
+      cursor: pointer;
+    }
+
+    .heart {
+      position: absolute;
+      font-size: 2rem;
+      user-select: none;
+    }
+
+    .score {
+      position: absolute;
+      top: 20px; left: 20px;
+      font-size: 1.5rem;
+      color: #ff4d6d;
+    }
+
+    .close-game {
+      position: absolute;
+      top: 20px; right: 20px;
+      background: white; color: black;
+      padding: 5px 15px; border-radius: 20px;
+      cursor: pointer; font-weight: bold;
+    }
+
+    /* Pulse animation for the main button */
+    .play-btn {
+      margin-top: 20px;
+      padding: 15px 30px;
+      background: #ff4d6d;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      animation: pulse 1.5s infinite;
+    }
+
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.1); }
       100% { transform: scale(1); }
     }
   </style>
+</head>
+<body>
+  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
+    Dev by Faisal
+  </div>
+
+  <div class="container" id="main-ui">
+    <img src="https://media4.giphy.com/media/IzXiddo2twMmdmU8Lv/giphy.gif" alt="Cute GIF" style="width:100%; max-width:400px; display:block; margin:auto; border-radius: 15px;" />
+    <h1>Hehe! I Love You Tooo! 😘</h1>
+    <p>hum humesha sath rahenge! ❤️</p>
+    
+    <button class="play-btn" onclick="openGame()">🎮 Play Couple Game</button>
+  </div>
+
+  <div id="game-container">
+    <div class="score">Score: <span id="score-val">0</span></div>
+    <div class="close-game" onclick="closeGame()">X Exit</div>
+    <div id="basket"></div>
+  </div>
+
+  <script>
+    let score = 0;
+    let gameActive = false;
+    const basket = document.getElementById('basket');
+    const gameContainer = document.getElementById('game-container');
+
+    // Game Open Karne ke liye
+    function openGame() {
+        gameActive = true;
+        score = 0;
+        document.getElementById('score-val').innerText = score;
+        gameContainer.style.display = 'block';
+        spawnHeart();
+    }
+
+    function closeGame() {
+        gameActive = false;
+        gameContainer.style.display = 'none';
+    }
+
+    // Basket move karne ke liye (Mobile touch & Mouse)
+    window.addEventListener('mousemove', (e) => {
+        if(gameActive) {
+            let x = e.clientX;
+            basket.style.left = x + 'px';
+        }
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if(gameActive) {
+            let x = e.touches[0].clientX;
+            basket.style.left = x + 'px';
+        }
+    });
+
+    function spawnHeart() {
+        if(!gameActive) return;
+
+        const heart = document.createElement('div');
+        heart.innerText = '❤️';
+        heart.className = 'heart';
+        heart.style.left = Math.random() * (window.innerWidth - 30) + 'px';
+        heart.style.top = '-50px';
+        gameContainer.appendChild(heart);
+
+        let fallInterval = setInterval(() => {
+            let top = parseInt(heart.style.top);
+            heart.style.top = (top + 5) + 'px';
+
+            // Check Collision (Pakra gaya?)
+            let heartRect = heart.getBoundingClientRect();
+            let basketRect = basket.getBoundingClientRect();
+
+            if (heartRect.bottom >= basketRect.top && 
+                heartRect.right >= basketRect.left && 
+                heartRect.left <= basketRect.right) {
+                score++;
+                document.getElementById('score-val').innerText = score;
+                heart.remove();
+                clearInterval(fallInterval);
+            }
+
+            // Screen se bahar nikal gaya
+            if (top > window.innerHeight) {
+                heart.remove();
+                clearInterval(fallInterval);
+            }
+        }, 20);
+
+        // Naya heart har 1 second baad
+        setTimeout(spawnHeart, 1000);
+    }
+  </script>
 </body>
 </html>
